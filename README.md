@@ -1,239 +1,338 @@
-# 🎃 SpookyAI - AI-Powered Halloween Image Generator
+# 🎃 SpookyAI
 
 <div align="center">
   <img src="assets/icons/app_icon.png" alt="SpookyAI Logo" width="120" height="120">
   
-  **Transform your photos into spooky Halloween masterpieces with AI magic!**
+  <h2>✨ Transform Your Photos into Spooky Halloween Masterpieces ✨</h2>
   
-  [![Flutter](https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
-  [![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
-  [![AI](https://img.shields.io/badge/AI-Powered-FF6A00?style=for-the-badge&logo=openai&logoColor=white)](#)
+  <p style="font-size: 18px; color: #666; margin: 20px 0;">
+    AI-powered image generation meets Halloween magic! Create stunning spooky transformations with the power of artificial intelligence.
+  </p>
+  
+  <div style="display: flex; justify-content: center; gap: 15px; margin: 20px 0;">
+    <img src="https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter">
+    <img src="https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white" alt="Dart">
+    <img src="https://img.shields.io/badge/AI-Powered-FF6A00?style=for-the-badge&logo=openai&logoColor=white" alt="AI Powered">
+    <img src="https://img.shields.io/badge/Halloween-FF8C00?style=for-the-badge&logo=halloween&logoColor=white" alt="Halloween">
+  </div>
 </div>
 
 ---
 
-## ✨ Features
+## 🚀 Quick Start
 
-### 🎨 **AI Image Generation**
-
-- **Text-to-Image**: Create spooky scenes from text descriptions
-- **Image-to-Image**: Transform your photos into Halloween masterpieces
-- **Halloween Themes**: Specialized prompts for spooky, eerie, and mysterious effects
-- **High Quality**: Generate stunning, high-resolution images
-
-### 🎭 **Halloween Special Features**
-
-- **Ghostface Trend**: Viral TikTok-style transformations
-- **Halloween Elements**: Built-in spooky settings, lighting, and effects
-- **Prompt Suggestions**: Pre-made Halloween scene ideas
-- **Transformation Tips**: Get the best results with expert guidance
-
-### 📱 **User Experience**
-
-- **Modern UI**: Beautiful, intuitive interface with Halloween theming
-- **Smooth Animations**: Delightful transitions and micro-interactions
-- **Keyboard-Friendly**: Smart keyboard handling for seamless typing
-- **Token System**: Fair usage with token-based generation limits
-
-### 🖼️ **Image Management**
-
-- **Local Storage**: Save generated images to your device
-- **Gallery View**: Browse all your spooky creations
-- **Export Options**: Share your Halloween masterpieces
-- **Image History**: Keep track of your favorite generations
+<div align="center">
+  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 20px; margin: 30px 0; color: white;">
+    <h3 style="margin: 0 0 15px 0; font-size: 24px;">🎯 Get Started in 3 Steps</h3>
+    <div style="display: flex; justify-content: space-around; margin: 20px 0;">
+      <div style="text-align: center; flex: 1;">
+        <div style="background: rgba(255,255,255,0.2); border-radius: 50%; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-size: 24px;">1️⃣</div>
+        <p style="margin: 0; font-size: 16px;"><strong>Upload Photo</strong><br>Choose your image</p>
+      </div>
+      <div style="text-align: center; flex: 1;">
+        <div style="background: rgba(255,255,255,0.2); border-radius: 50%; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-size: 24px;">2️⃣</div>
+        <p style="margin: 0; font-size: 16px;"><strong>Describe Vision</strong><br>Tell AI what you want</p>
+      </div>
+      <div style="text-align: center; flex: 1;">
+        <div style="background: rgba(255,255,255,0.2); border-radius: 50%; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-size: 24px;">3️⃣</div>
+        <p style="margin: 0; font-size: 16px;"><strong>Get Magic</strong><br>AI creates masterpiece</p>
+      </div>
+    </div>
+  </div>
+</div>
 
 ---
 
-## 📱 App Screenshots
+## ✨ Key Features
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 30px 0;">
+
+<div style="background: #f8f9fa; padding: 25px; border-radius: 15px; border-left: 5px solid #ff6b6b;">
+  <h3 style="margin: 0 0 15px 0; color: #ff6b6b;">🤖 AI-Powered Generation</h3>
+  <ul style="margin: 0; padding-left: 20px;">
+    <li>Text-to-image creation</li>
+    <li>Photo transformation</li>
+    <li>High-quality results</li>
+    <li>Real-time processing</li>
+  </ul>
+</div>
+
+<div style="background: #f8f9fa; padding: 25px; border-radius: 15px; border-left: 5px solid #4ecdc4;">
+  <h3 style="margin: 0 0 15px 0; color: #4ecdc4;">🎃 Halloween Magic</h3>
+  <ul style="margin: 0; padding-left: 20px;">
+    <li>Spooky themes & effects</li>
+    <li>Halloween elements library</li>
+    <li>Viral trend transformations</li>
+    <li>Seasonal prompts</li>
+  </ul>
+</div>
+
+<div style="background: #f8f9fa; padding: 25px; border-radius: 15px; border-left: 5px solid #45b7d1;">
+  <h3 style="margin: 0 0 15px 0; color: #45b7d1;">📱 Modern Experience</h3>
+  <ul style="margin: 0; padding-left: 20px;">
+    <li>Intuitive interface</li>
+    <li>Smooth animations</li>
+    <li>Token-based system</li>
+    <li>Secure payments</li>
+  </ul>
+</div>
+
+<div style="background: #f8f9fa; padding: 25px; border-radius: 15px; border-left: 5px solid #96ceb4;">
+  <h3 style="margin: 0 0 15px 0; color: #96ceb4;">🖼️ Image Management</h3>
+  <ul style="margin: 0; padding-left: 20px;">
+    <li>Local gallery storage</li>
+    <li>Easy sharing options</li>
+    <li>Export capabilities</li>
+    <li>History tracking</li>
+  </ul>
+</div>
+
+</div>
+
+---
+
+## 📱 App Preview
 
 <div align="center">
   
   ### 🎃 **Main Interface**
-  <p align="center">
-    <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.28.56.png" alt="Main Screen" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); margin: 10px;">
-    <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.29.08.png" alt="Generation Screen" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); margin: 10px;">
-    <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.39.53.png" alt="Image Upload" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); margin: 10px;">
-  </p>
+  <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 20px; margin: 30px 0;">
+    <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.28.56.png" alt="Main Screen" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+    <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.29.08.png" alt="Generation Screen" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+    <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.39.53.png" alt="Image Upload" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+  </div>
   
-  <details>
-    <summary><b>🎨 AI Generation Features</b></summary>
-    <p align="center">
-      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.39.59.png" alt="Prompt Input" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); margin: 10px;">
-      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.07.png" alt="Mode Selection" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); margin: 10px;">
-      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.23.png" alt="Generation Process" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); margin: 10px;">
-    </p>
+  <details style="margin: 20px 0;">
+    <summary style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 18px;">
+      🎨 AI Generation Features
+    </summary>
+    <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 20px; margin: 20px 0;">
+      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.39.59.png" alt="Prompt Input" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.07.png" alt="Mode Selection" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.23.png" alt="Generation Process" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+    </div>
   </details>
   
-  <details>
-    <summary><b>📸 Results & Gallery</b></summary>
-    <p align="center">
-      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.38.png" alt="Generated Image" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); margin: 10px;">
-      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.43.28.png" alt="Gallery View" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); margin: 10px;">
-      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.43.32.png" alt="Settings" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); margin: 10px;">
-    </p>
+  <details style="margin: 20px 0;">
+    <summary style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); color: white; padding: 15px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 18px;">
+      📸 Results & Gallery
+    </summary>
+    <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 20px; margin: 20px 0;">
+      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.38.png" alt="Generated Image" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.43.28.png" alt="Gallery View" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.43.32.png" alt="Settings" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+    </div>
   </details>
   
-  <br>
-  
-  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 15px; margin: 20px 0;">
-    <h3 style="color: white; margin: 0;">✨ Experience the Magic</h3>
-    <p style="color: white; margin: 10px 0 0 0; font-size: 16px;">Transform your photos into spooky Halloween masterpieces with AI-powered magic!</p>
+  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 20px; margin: 30px 0; color: white; text-align: center;">
+    <h3 style="margin: 0 0 15px 0; font-size: 24px;">✨ Experience the Magic</h3>
+    <p style="margin: 0; font-size: 18px; opacity: 0.9;">Transform your photos into spooky Halloween masterpieces with AI-powered magic!</p>
   </div>
   
 </div>
 
+---
 
+## 🛠️ Technical Stack
 
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 30px 0;">
 
-(🧙‍♂️ Feature Update: Implement onboarding process and in-app purchase functionality)
+<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; text-align: center;">
+  <h4 style="margin: 0 0 15px 0;">🎨 Frontend</h4>
+  <p style="margin: 0; font-size: 14px;">Flutter • Dart • Material Design • Lottie Animations</p>
+</div>
 
-### **3. Production Deployment**
+<div style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); color: white; padding: 25px; border-radius: 15px; text-align: center;">
+  <h4 style="margin: 0 0 15px 0;">🤖 AI Integration</h4>
+  <p style="margin: 0; font-size: 14px;">Stability AI • HTTP API • Image Processing • Prompt Engineering</p>
+</div>
 
-- Use CI/CD environment variables
-- Never hardcode keys in source code
-- Rotate keys regularly
-- Monitor API usage
+<div style="background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%); color: white; padding: 25px; border-radius: 15px; text-align: center;">
+  <h4 style="margin: 0 0 15px 0;">💾 Storage</h4>
+  <p style="margin: 0; font-size: 14px;">SharedPreferences • Secure Storage • Local Gallery • File Management</p>
+</div>
+
+<div style="background: linear-gradient(135deg, #96ceb4 0%, #feca57 100%); color: white; padding: 25px; border-radius: 15px; text-align: center;">
+  <h4 style="margin: 0 0 15px 0;">💰 Monetization</h4>
+  <p style="margin: 0; font-size: 14px;">In-App Purchases • Token System • Payment Processing • Purchase Restoration</p>
+</div>
+
+</div>
 
 ---
 
 ## 🏗️ Architecture
 
-### **Clean Architecture Pattern**
+<div align="center">
+  <div style="background: #f8f9fa; padding: 30px; border-radius: 20px; margin: 30px 0;">
+    <h3 style="margin: 0 0 20px 0;">Clean Architecture Pattern</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+      <div style="background: white; padding: 20px; border-radius: 10px; border-left: 4px solid #667eea;">
+        <h4 style="margin: 0 0 10px 0; color: #667eea;">📁 Core</h4>
+        <p style="margin: 0; font-size: 14px; color: #666;">Configuration, Models, Services, Theme, Utils</p>
+      </div>
+      <div style="background: white; padding: 20px; border-radius: 10px; border-left: 4px solid #ff6b6b;">
+        <h4 style="margin: 0 0 10px 0; color: #ff6b6b;">🎯 Features</h4>
+        <p style="margin: 0; font-size: 14px; color: #666;">Home, Onboarding, Domain Logic, Presentation</p>
+      </div>
+      <div style="background: white; padding: 20px; border-radius: 10px; border-left: 4px solid #4ecdc4;">
+        <h4 style="margin: 0 0 10px 0; color: #4ecdc4;">🎨 UI Layer</h4>
+        <p style="margin: 0; font-size: 14px; color: #666;">Pages, Widgets, State Management, Animations</p>
+      </div>
+    </div>
+  </div>
+</div>
 
+---
+
+## 🚀 Getting Started
+
+<div style="background: #f8f9fa; padding: 30px; border-radius: 20px; margin: 30px 0;">
+
+### **📋 Prerequisites**
+
+- Flutter SDK (3.10+)
+- Dart SDK (3.0+)
+- Android Studio / VS Code
+- Stability AI API Key
+
+### **⚙️ Installation**
+
+```bash
+# Clone the repository
+git clone https://github.com/furkanagess/SpookyAI.git
+cd SpookyAI
+
+# Install dependencies
+flutter pub get
+
+# Configure API key
+cp env.example .env
+# Edit .env with your Stability AI API key
+
+# Run the app
+flutter run
 ```
-lib/
-├── core/                    # Core functionality
-│   ├── config/             # API keys and configuration
-│   ├── models/             # Data models
-│   ├── services/           # Business logic services
-│   ├── theme/              # App theming
-│   └── utils/              # Utility functions
-├── features/               # Feature modules
-│   └── home/               # Main app feature
-│       ├── domain/         # Business logic
-│       └── presentation/  # UI layer
-│           ├── pages/      # Screen components
-│           └── widgets/    # Reusable UI components
-└── main.dart              # App entry point
-```
 
-### **Key Technologies**
+### **🔐 API Configuration**
 
-- **Flutter**: Cross-platform mobile development
-- **Provider**: State management
-- **HTTP**: API communication
-- **Shared Preferences**: Local data storage
-- **Image Picker**: Photo selection
-- **Lottie**: Smooth animations
+1. Get your Stability AI API key from [Stability AI Platform](https://platform.stability.ai/)
+2. Create `.env` file in project root
+3. Add your API key: `STABILITY_API_KEY=your_key_here`
+4. Never commit the `.env` file to version control
+
+</div>
 
 ---
 
-## 🎯 How to Use
+## 📊 Features Status
 
-### **1. Text-to-Image Generation**
-
-1. Open the app and select "Text to Image" mode
-2. Enter a spooky description (e.g., "Haunted house with ghosts")
-3. Choose Halloween elements (setting, lighting, effects)
-4. Tap "Generate Image" and wait for your spooky creation!
-
-### **2. Image-to-Image Transformation**
-
-1. Select "Image to Image" mode
-2. Upload a photo from your gallery
-3. Describe how you want it transformed
-4. Let AI work its magic on your photo!
-
-### **3. Ghostface Trend**
-
-1. Enable the Ghostface Trend toggle
-2. Upload a selfie or use the preset image
-3. Get the viral TikTok-style transformation
-4. Share your spooky result!
-
----
-
-## 🛠️ Development
-
-### **Project Structure**
-
-- **Clean Architecture**: Separation of concerns
-- **Provider Pattern**: State management
-- **Widget Composition**: Reusable components
-- **Service Layer**: API and business logic
-- **Theme System**: Consistent design
-
-### **Key Services**
-
-- `StabilityService`: AI image generation
-- `TokenService`: Usage tracking
-- `ImageStorageService`: Local storage
-- `SavedImagesProvider`: State management
-
-### **Customization**
-
-- **Themes**: Halloween-themed UI
-- **Animations**: Smooth transitions
-- **Responsive**: Works on all screen sizes
-- **Accessibility**: Screen reader support
-
----
-
-## 📊 Features Overview
-
-| Feature               | Description                 | Status |
-| --------------------- | --------------------------- | ------ |
-| 🎨 Text-to-Image      | Generate from text prompts  | ✅     |
-| 📸 Image-to-Image     | Transform existing photos   | ✅     |
-| 🎃 Halloween Themes   | Spooky, eerie effects       | ✅     |
-| 👻 Ghostface Trend    | Viral TikTok style          | ✅     |
-| 💾 Local Storage      | Save generated images       | ✅     |
-| 🎭 Prompt Suggestions | Built-in Halloween ideas    | ✅     |
-| 🎨 Custom Elements    | Settings, lighting, effects | ✅     |
-| 📱 Modern UI          | Beautiful, intuitive design | ✅     |
+<div style="overflow-x: auto; margin: 30px 0;">
+  <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+    <thead>
+      <tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+        <th style="padding: 15px; text-align: left;">Feature</th>
+        <th style="padding: 15px; text-align: left;">Description</th>
+        <th style="padding: 15px; text-align: center;">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom: 1px solid #eee;">
+        <td style="padding: 15px;">🎨 Text-to-Image</td>
+        <td style="padding: 15px;">Generate from text prompts</td>
+        <td style="padding: 15px; text-align: center;"><span style="background: #4ecdc4; color: white; padding: 5px 10px; border-radius: 15px; font-size: 12px;">✅ Complete</span></td>
+      </tr>
+      <tr style="border-bottom: 1px solid #eee;">
+        <td style="padding: 15px;">📸 Image-to-Image</td>
+        <td style="padding: 15px;">Transform existing photos</td>
+        <td style="padding: 15px; text-align: center;"><span style="background: #4ecdc4; color: white; padding: 5px 10px; border-radius: 15px; font-size: 12px;">✅ Complete</span></td>
+      </tr>
+      <tr style="border-bottom: 1px solid #eee;">
+        <td style="padding: 15px;">🎃 Halloween Themes</td>
+        <td style="padding: 15px;">Spooky, eerie effects</td>
+        <td style="padding: 15px; text-align: center;"><span style="background: #4ecdc4; color: white; padding: 5px 10px; border-radius: 15px; font-size: 12px;">✅ Complete</span></td>
+      </tr>
+      <tr style="border-bottom: 1px solid #eee;">
+        <td style="padding: 15px;">💰 Token System</td>
+        <td style="padding: 15px;">Fair usage with tokens</td>
+        <td style="padding: 15px; text-align: center;"><span style="background: #4ecdc4; color: white; padding: 5px 10px; border-radius: 15px; font-size: 12px;">✅ Complete</span></td>
+      </tr>
+      <tr style="border-bottom: 1px solid #eee;">
+        <td style="padding: 15px;">🛒 In-App Purchases</td>
+        <td style="padding: 15px;">Token packages & payments</td>
+        <td style="padding: 15px; text-align: center;"><span style="background: #4ecdc4; color: white; padding: 5px 10px; border-radius: 15px; font-size: 12px;">✅ Complete</span></td>
+      </tr>
+      <tr style="border-bottom: 1px solid #eee;">
+        <td style="padding: 15px;">📱 Modern UI</td>
+        <td style="padding: 15px;">Beautiful, intuitive design</td>
+        <td style="padding: 15px; text-align: center;"><span style="background: #4ecdc4; color: white; padding: 5px 10px; border-radius: 15px; font-size: 12px;">✅ Complete</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
-
-### **How to Contribute**
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+<div style="background: linear-gradient(135deg, #96ceb4 0%, #feca57 100%); color: white; padding: 30px; border-radius: 20px; margin: 30px 0; text-align: center;">
+  <h3 style="margin: 0 0 20px 0;">🌟 We Welcome Contributions!</h3>
+  <p style="margin: 0 0 20px 0; font-size: 16px;">Help us make SpookyAI even more amazing</p>
+  
+  <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+    <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; flex: 1; min-width: 200px;">
+      <h4 style="margin: 0 0 10px 0;">🐛 Bug Reports</h4>
+      <p style="margin: 0; font-size: 14px;">Found an issue? Let us know!</p>
+    </div>
+    <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; flex: 1; min-width: 200px;">
+      <h4 style="margin: 0 0 10px 0;">✨ Feature Requests</h4>
+      <p style="margin: 0; font-size: 14px;">Have an idea? Share it with us!</p>
+    </div>
+    <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; flex: 1; min-width: 200px;">
+      <h4 style="margin: 0 0 10px 0;">💻 Code Contributions</h4>
+      <p style="margin: 0; font-size: 14px;">Want to contribute code? Great!</p>
+    </div>
+  </div>
+</div>
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+<div align="center" style="background: #f8f9fa; padding: 30px; border-radius: 20px; margin: 30px 0;">
+  <h3 style="margin: 0 0 15px 0;">📜 MIT License</h3>
+  <p style="margin: 0; color: #666;">This project is licensed under the MIT License - see the <a href="LICENSE" style="color: #667eea;">LICENSE</a> file for details.</p>
+</div>
 
 ---
 
 ## 🔗 Links
 
-- **App Store**: [Download SpookyAI](https://apps.apple.com/app/spookyai)
-- **Google Play**: [Get it on Google Play](https://play.google.com/store/apps/details?id=com.spookyai.app)
+<div align="center" style="margin: 30px 0;">
+  <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+    <a href="https://apps.apple.com/app/spookyai" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 25px; border-radius: 10px; text-decoration: none; font-weight: bold;">
+      🍎 App Store
+    </a>
+    <a href="https://play.google.com/store/apps/details?id=com.spookyai.app" style="background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%); color: white; padding: 15px 25px; border-radius: 10px; text-decoration: none; font-weight: bold;">
+      🤖 Google Play
+    </a>
+    <a href="https://github.com/furkanagess/SpookyAI" style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); color: white; padding: 15px 25px; border-radius: 10px; text-decoration: none; font-weight: bold;">
+      💻 GitHub
+    </a>
+  </div>
+</div>
 
 ---
 
-## 🙏 Acknowledgments
-
-- **Stability AI** for the amazing image generation API
-- **Flutter Team** for the excellent framework
-- **Open Source Community** for inspiration and support
-
----
-
-<div align="center">
-  <h3>🎃 Happy Halloween! 🎃</h3>
-  <p>Transform your photos into spooky masterpieces with SpookyAI!</p>
+<div align="center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px; border-radius: 20px; margin: 30px 0;">
+  <h2 style="margin: 0 0 20px 0; font-size: 28px;">🎃 Happy Halloween! 🎃</h2>
+  <p style="margin: 0 0 20px 0; font-size: 18px;">Transform your photos into spooky masterpieces with SpookyAI!</p>
   
-  <img src="assets/images/ghost-face.png" alt="Ghost Face" width="100" style="margin: 20px;">
-  <img src="assets/images/pumpkin.png" alt="Pumpkin" width="100" style="margin: 20px;">
-  <img src="assets/images/witch-hat.png" alt="Witch Hat" width="100" style="margin: 20px;">
+  <div style="display: flex; justify-content: center; gap: 20px; margin: 20px 0;">
+    <img src="assets/images/ghost-face.png" alt="Ghost Face" width="80" style="border-radius: 10px;">
+    <img src="assets/images/pumpkin.png" alt="Pumpkin" width="80" style="border-radius: 10px;">
+    <img src="assets/images/witch-hat.png" alt="Witch Hat" width="80" style="border-radius: 10px;">
+  </div>
+  
+  <p style="margin: 0; font-size: 16px; opacity: 0.9;">Made with ❤️ and AI magic</p>
 </div>
