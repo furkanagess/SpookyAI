@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 
 import 'main_navigation_page.dart';
+import '../../../onboarding/presentation/pages/onboarding_page.dart';
+import '../../../../core/models/onboarding_data.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -25,11 +27,21 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  void _goHome() {
+  Future<void> _checkOnboardingAndNavigate() async {
     if (!mounted) return;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const MainNavigationPage()),
-    );
+
+    final bool isOnboardingCompleted =
+        await OnboardingService.isOnboardingCompleted();
+
+    if (isOnboardingCompleted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const MainNavigationPage()),
+      );
+    } else {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const OnboardingPage()),
+      );
+    }
   }
 
   @override
@@ -43,7 +55,7 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
           onLoaded: (comp) {
             _controller
               ..duration = comp.duration
-              ..forward().whenComplete(_goHome);
+              ..forward().whenComplete(_checkOnboardingAndNavigate);
           },
         ),
       ),

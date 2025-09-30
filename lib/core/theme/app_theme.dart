@@ -60,4 +60,10 @@ class AppTheme {
       ),
     );
   }
+
+  static const TextStyle headingStyle = TextStyle(
+    fontSize: 24,
+    fontWeight: FontWeight.bold,
+    color: Colors.white,
+  );
 }
