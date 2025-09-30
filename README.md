@@ -44,26 +44,42 @@
 
 ---
 
-## 📱 Screenshots
+## 📱 App Screenshots
 
 <div align="center">
-  <h3>🎃 App Interface</h3>
   
-  <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.28.56.png" alt="Main Screen" width="200" style="margin: 10px;">
-  <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.29.08.png" alt="Generation Screen" width="200" style="margin: 10px;">
-  <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.39.53.png" alt="Image Upload" width="200" style="margin: 10px;">
+  ### 🎃 **Main Interface**
+  <p align="center">
+    <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.28.56.png" alt="Main Screen" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); margin: 10px;">
+    <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.29.08.png" alt="Generation Screen" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); margin: 10px;">
+    <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.39.53.png" alt="Image Upload" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); margin: 10px;">
+  </p>
   
-  <h3>🎨 Generation Features</h3>
+  <details>
+    <summary><b>🎨 AI Generation Features</b></summary>
+    <p align="center">
+      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.39.59.png" alt="Prompt Input" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); margin: 10px;">
+      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.07.png" alt="Mode Selection" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); margin: 10px;">
+      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.23.png" alt="Generation Process" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); margin: 10px;">
+    </p>
+  </details>
   
-  <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.39.59.png" alt="Prompt Input" width="200" style="margin: 10px;">
-  <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.07.png" alt="Mode Selection" width="200" style="margin: 10px;">
-  <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.23.png" alt="Generation Process" width="200" style="margin: 10px;">
+  <details>
+    <summary><b>📸 Results & Gallery</b></summary>
+    <p align="center">
+      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.38.png" alt="Generated Image" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); margin: 10px;">
+      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.43.28.png" alt="Gallery View" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); margin: 10px;">
+      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.43.32.png" alt="Settings" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); margin: 10px;">
+    </p>
+  </details>
   
-  <h3>📸 Results & Gallery</h3>
+  <br>
   
-  <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.38.png" alt="Generated Image" width="200" style="margin: 10px;">
-  <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.43.28.png" alt="Gallery View" width="200" style="margin: 10px;">
-  <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.43.32.png" alt="Settings" width="200" style="margin: 10px;">
+  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 15px; margin: 20px 0;">
+    <h3 style="color: white; margin: 0;">✨ Experience the Magic</h3>
+    <p style="color: white; margin: 10px 0 0 0; font-size: 16px;">Transform your photos into spooky Halloween masterpieces with AI-powered magic!</p>
+  </div>
+  
 </div>
 
 # <<<<<<< HEAD
