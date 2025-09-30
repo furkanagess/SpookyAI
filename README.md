@@ -66,45 +66,44 @@
   <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.43.32.png" alt="Settings" width="200" style="margin: 10px;">
 </div>
 
----
+## 🔐 Security & API Configuration
 
-## 🚀 Getting Started
+### **⚠️ IMPORTANT: API Key Security**
 
-### Prerequisites
+**Never commit API keys to version control!** Follow these steps for secure setup:
 
-- Flutter SDK (3.0 or higher)
-- Dart SDK (3.0 or higher)
-- iOS 12.0+ or Android 8.0+
-- Stability AI API key
+### **1. Environment Setup**
+```bash
+# Copy the environment template
+cp env.example .env
 
-### Installation
+# Edit .env file with your actual API key
+STABILITY_API_KEY=your_actual_stability_api_key_here
+```
 
-1. **Clone the repository**
+### **2. Running with API Keys**
+```bash
+# Method 1: Command line
+flutter run --dart-define=STABILITY_API_KEY=your_api_key_here
 
-   ```bash
-   git clone https://github.com/yourusername/spookyai.git
-   cd spookyai
-   ```
+# Method 2: VS Code launch.json
+{
+  "configurations": [
+    {
+      "name": "SpookyAI",
+      "request": "launch",
+      "type": "dart",
+      "args": ["--dart-define=STABILITY_API_KEY=your_api_key_here"]
+    }
+  ]
+}
+```
 
-2. **Install dependencies**
-
-   ```bash
-   flutter pub get
-   ```
-
-3. **Configure API keys**
-
-   ```dart
-   // lib/core/config/api_keys.dart
-   class ApiKeys {
-     static const String stability = 'YOUR_STABILITY_AI_API_KEY';
-   }
-   ```
-
-4. **Run the app**
-   ```bash
-   flutter run
-   ```
+### **3. Production Deployment**
+- Use CI/CD environment variables
+- Never hardcode keys in source code
+- Rotate keys regularly
+- Monitor API usage
 
 ---
 
@@ -206,38 +205,8 @@ lib/
 
 ---
 
-## 🔧 Configuration
 
-### **API Setup**
 
-```dart
-// Add your Stability AI API key
-class ApiKeys {
-  static const String stability = 'sk-your-api-key-here';
-}
-```
-
-### **Token System**
-
-```dart
-// Configure token limits
-class TokenService {
-  static const int DEFAULT_TOKENS = 10;
-  static const int TOKEN_COST = 1;
-}
-```
-
-### **Storage Settings**
-
-```dart
-// Configure image storage
-class ImageStorageService {
-  static const String STORAGE_PATH = 'spooky_images';
-  static const int MAX_IMAGES = 100;
-}
-```
-
----
 
 ## 🤝 Contributing
 
@@ -263,9 +232,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **App Store**: [Download SpookyAI](https://apps.apple.com/app/spookyai)
 - **Google Play**: [Get it on Google Play](https://play.google.com/store/apps/details?id=com.spookyai.app)
-- **Website**: [spookyai.com](https://spookyai.com)
-- **Support**: [help@spookyai.com](mailto:help@spookyai.com)
-
 ---
 
 ## 🙏 Acknowledgments
