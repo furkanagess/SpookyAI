@@ -66,38 +66,6 @@
   <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.43.32.png" alt="Settings" width="200" style="margin: 10px;">
 </div>
 
-## 🔐 Security & API Configuration
-
-### **⚠️ IMPORTANT: API Key Security**
-
-**Never commit API keys to version control!** Follow these steps for secure setup:
-
-### **1. Environment Setup**
-```bash
-# Copy the environment template
-cp env.example .env
-
-# Edit .env file with your actual API key
-STABILITY_API_KEY=your_actual_stability_api_key_here
-```
-
-### **2. Running with API Keys**
-```bash
-# Method 1: Command line
-flutter run --dart-define=STABILITY_API_KEY=your_api_key_here
-
-# Method 2: VS Code launch.json
-{
-  "configurations": [
-    {
-      "name": "SpookyAI",
-      "request": "launch",
-      "type": "dart",
-      "args": ["--dart-define=STABILITY_API_KEY=your_api_key_here"]
-    }
-  ]
-}
-```
 
 ### **3. Production Deployment**
 - Use CI/CD environment variables
