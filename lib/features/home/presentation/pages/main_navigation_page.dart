@@ -878,45 +878,48 @@ class _MainNavigationPageState extends State<MainNavigationPage>
                       },
                     ),
                   ),
+                ],
+              ),
+            ),
+          ),
 
-                  // Generate button (fixed at bottom, above keyboard)
-                  Positioned(
-                    left: 16,
-                    right: 16,
-                    bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      curve: Curves.easeOut,
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: FilledButton.icon(
-                          onPressed: !_isGenerating && _prompt.isNotEmpty
-                              ? _showGenerationConfirmationDialog
-                              : null,
-                          icon: _isGenerating
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Icon(Icons.auto_fix_high),
-                          label: Text(
-                            _isGenerating ? 'Generating...' : 'Generate Image',
-                          ),
-                          style: FilledButton.styleFrom(
-                            backgroundColor:
-                                !_isGenerating && _prompt.isNotEmpty
-                                ? const Color(0xFFFF6A00)
-                                : const Color(0xFF4B5563),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                        ),
-                      ),
+          // Generate button (fixed at bottom, above home indicator/keyboard)
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 16,
+            child: SafeArea(
+              minimum: EdgeInsets.only(left: 0, right: 0, bottom: 8),
+              child: AnimatedPadding(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOut,
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom,
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: !_isGenerating && _prompt.isNotEmpty
+                        ? _showGenerationConfirmationDialog
+                        : null,
+                    icon: _isGenerating
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.auto_fix_high),
+                    label: Text(
+                      _isGenerating ? 'Generating...' : 'Generate Image',
+                    ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: !_isGenerating && _prompt.isNotEmpty
+                          ? const Color(0xFFFF6A00)
+                          : const Color(0xFF4B5563),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                   ),
-                ],
+                ),
               ),
             ),
           ),
