@@ -4,6 +4,7 @@ import 'core/theme/app_theme.dart';
 import 'features/home/presentation/pages/splash_page.dart';
 import 'package:provider/provider.dart';
 import 'core/services/saved_images_provider.dart';
+import 'core/services/token_provider.dart';
 import 'core/services/in_app_purchase_service.dart';
 
 void main() async {
@@ -20,8 +21,11 @@ class GhostfaceApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => SavedImagesProvider()..load(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => SavedImagesProvider()..load()),
+        ChangeNotifierProvider(create: (_) => TokenProvider()..loadBalance()),
+      ],
       child: MaterialApp(
         title: 'SpookyAI',
         debugShowCheckedModeBanner: false,

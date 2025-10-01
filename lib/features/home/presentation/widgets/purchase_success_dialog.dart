@@ -4,6 +4,7 @@ import 'package:lottie/lottie.dart';
 Future<void> showPurchaseSuccessDialog(
   BuildContext context, {
   required int tokensAdded,
+  bool isPremiumSubscription = false,
 }) async {
   return showDialog<void>(
     context: context,
@@ -22,10 +23,12 @@ Future<void> showPurchaseSuccessDialog(
               child: Lottie.asset('assets/lottie/purchase_success.json'),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Congrats! Purchase Successful',
+            Text(
+              isPremiumSubscription
+                  ? 'Welcome to SpookyAI Premium!'
+                  : 'Congrats! Purchase Successful',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w700,
                 fontSize: 18,
@@ -35,7 +38,9 @@ Future<void> showPurchaseSuccessDialog(
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                '$tokensAdded tokens have been added to your account. You can start generating new images now.',
+                isPremiumSubscription
+                    ? 'You now have access to all premium features including $tokensAdded monthly tokens, daily spin wheel, and exclusive themes!'
+                    : '$tokensAdded tokens have been added to your account. You can start generating new images now.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Color(0xFFB9A8D0),
@@ -58,7 +63,9 @@ Future<void> showPurchaseSuccessDialog(
                     ),
                   ),
                   onPressed: () => Navigator.of(ctx).pop(),
-                  child: const Text('Awesome!'),
+                  child: Text(
+                    isPremiumSubscription ? 'Start Creating!' : 'Awesome!',
+                  ),
                 ),
               ),
             ),

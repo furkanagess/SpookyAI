@@ -1,15 +1,22 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/services/saved_images_provider.dart';
+import '../../../../core/services/token_provider.dart';
+import '../../../../core/widgets/token_display_widget.dart';
+import '../../../../core/services/premium_service.dart';
 
 import '../../../../core/config/api_keys.dart';
 import '../../../../core/services/stability_service.dart';
+import '../../../../core/services/notification_service.dart';
 import '../../../../core/theme/app_metrics.dart';
-import '../../../../core/services/token_service.dart';
 // import '../../../../core/utils/prompt_builder.dart'; // COMMENTED OUT: Ghostface module disabled
 import 'purchase_page.dart';
 import 'photos_page.dart';
+import 'prompts_page.dart';
+import 'profile_page.dart';
+import 'api_key_page.dart';
 import '../../domain/generation_mode.dart';
 import '../widgets/prompt_input_widget.dart';
 import '../widgets/image_upload_widget.dart';
@@ -28,9 +35,24 @@ class _MainNavigationPageState extends State<MainNavigationPage>
   late final StabilityService _stability;
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
+  late AnimationController _premiumBannerController;
+  late Animation<double> _premiumBannerAnimation;
+
+  // Page controller for better performance
+  final PageController _pageController = PageController();
   late Animation<Offset> _slideAnimation;
 
   int _currentIndex = 0;
+  bool _isPremium = false;
+  StreamSubscription<bool>? _premiumStatusSubscription;
+
+  // Page keys for better performance
+  final List<GlobalKey<State<StatefulWidget>>> _pageKeys = [
+    GlobalKey<State<StatefulWidget>>(),
+    GlobalKey<State<StatefulWidget>>(),
+    GlobalKey<State<StatefulWidget>>(),
+    GlobalKey<State<StatefulWidget>>(),
+  ];
 
   // Generation data
   String _prompt = '';
@@ -44,7 +66,6 @@ class _MainNavigationPageState extends State<MainNavigationPage>
   void initState() {
     super.initState();
     _stability = StabilityService();
-    _loadTokens();
 
     // Initialize animation controllers
     _fadeController = AnimationController(
@@ -52,8 +73,20 @@ class _MainNavigationPageState extends State<MainNavigationPage>
       vsync: this,
     );
 
+    _premiumBannerController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    );
+
+    _premiumBannerAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _premiumBannerController,
+        curve: Curves.easeInOut,
+      ),
     );
 
     _slideAnimation =
@@ -62,22 +95,60 @@ class _MainNavigationPageState extends State<MainNavigationPage>
         );
 
     _fadeController.forward();
+    _loadPremiumStatus();
+    _listenToPremiumStatusChanges();
   }
 
   @override
   void dispose() {
     _fadeController.dispose();
+    _premiumBannerController.dispose();
+    _pageController.dispose();
+    _premiumStatusSubscription?.cancel();
     super.dispose();
   }
 
-  int _tokens = 0;
+  bool get _hasStabilityKey => ApiKeys.hasStabilityKey;
 
-  Future<void> _loadTokens() async {
-    _tokens = await TokenService.getBalance();
-    if (mounted) setState(() {});
+  Future<void> _loadPremiumStatus() async {
+    try {
+      final isPremium = await PremiumService.isPremiumUser();
+      if (mounted) {
+        setState(() {
+          _isPremium = isPremium;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isPremium = false;
+        });
+      }
+    }
   }
 
-  bool get _hasStabilityKey => ApiKeys.stability.isNotEmpty;
+  void _listenToPremiumStatusChanges() {
+    _premiumStatusSubscription = PremiumService.premiumStatusStream.listen(
+      (isPremium) {
+        if (mounted) {
+          setState(() {
+            _isPremium = isPremium;
+          });
+
+          // Start banner animation when premium status changes to true
+          if (isPremium) {
+            _premiumBannerController.repeat(reverse: true);
+          } else {
+            _premiumBannerController.stop();
+            _premiumBannerController.reset();
+          }
+        }
+      },
+      onError: (error) {
+        print('MainNavigationPage: Error listening to premium status: $error');
+      },
+    );
+  }
 
   void _onPromptChanged(String prompt) {
     setState(() {
@@ -116,9 +187,10 @@ class _MainNavigationPageState extends State<MainNavigationPage>
 
   Future<void> _showGenerationConfirmationDialog() async {
     if (_prompt.isEmpty) {
-      ScaffoldMessenger.of(
+      NotificationService.warning(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Please enter a prompt')));
+        message: 'Please enter a prompt to generate an image.',
+      );
       return;
     }
 
@@ -296,28 +368,36 @@ class _MainNavigationPageState extends State<MainNavigationPage>
 
   Future<void> _generateImage() async {
     if (!_hasStabilityKey) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Stability API key is required. Please add your API key.',
-          ),
-        ),
+      NotificationService.error(
+        context,
+        message: NotificationService.apiKeyRequired,
+        actionLabel: 'Configure',
+        onAction: () {
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const ApiKeyPage()));
+        },
       );
       return;
     }
 
     // Consume 1 token upfront
-    final bool hasToken = await TokenService.consumeOne();
+    final tokenProvider = context.read<TokenProvider>();
+    final bool hasToken = await tokenProvider.consumeOne();
     if (!hasToken) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Out of tokens. Purchase more to continue.'),
-        ),
+      NotificationService.error(
+        context,
+        message: NotificationService.outOfTokens,
+        actionLabel: 'Buy Tokens',
+        onAction: () async {
+          await Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const PurchasePage()));
+        },
       );
       return;
     }
-    await _loadTokens();
 
     setState(() {
       _isGenerating = true;
@@ -382,8 +462,9 @@ class _MainNavigationPageState extends State<MainNavigationPage>
 
       await _showResultDialog(resultBytes);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Görsel başarıyla oluşturuldu!')),
+        NotificationService.success(
+          context,
+          message: NotificationService.imageGenerated,
         );
       }
     } catch (e) {
@@ -392,11 +473,12 @@ class _MainNavigationPageState extends State<MainNavigationPage>
         progress.close();
       } catch (_) {}
       // Refund token on failure
-      await TokenService.refundOne();
-      await _loadTokens();
-      ScaffoldMessenger.of(
+      final tokenProvider = context.read<TokenProvider>();
+      await tokenProvider.refundOne();
+      NotificationService.error(
         context,
-      ).showSnackBar(SnackBar(content: Text('Generation failed: $e')));
+        message: NotificationService.generationFailed,
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -511,20 +593,16 @@ class _MainNavigationPageState extends State<MainNavigationPage>
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Image saved successfully!'),
-            backgroundColor: Color(0xFFFF6A00),
-          ),
+        NotificationService.success(
+          context,
+          message: NotificationService.imageSaved,
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save image: $e'),
-            backgroundColor: Colors.red,
-          ),
+        NotificationService.error(
+          context,
+          message: NotificationService.saveFailed,
         );
       }
     }
@@ -538,101 +616,168 @@ class _MainNavigationPageState extends State<MainNavigationPage>
         children: [
           _buildGenerateTab(),
           PhotosPage(
+            key: _pageKeys[1],
             onNavigateToGenerate: () {
               setState(() {
                 _currentIndex = 0;
               });
+              _pageController.animateToPage(
+                0,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
             },
           ),
+          PromptsPage(
+            key: _pageKeys[2],
+            onPromptSelected: (prompt) {
+              setState(() {
+                _prompt = prompt;
+                _currentIndex = 0; // Navigate to generate tab
+              });
+              _pageController.animateToPage(
+                0,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
+            },
+          ),
+          ProfilePage(key: _pageKeys[3]),
         ],
       ),
       bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: const BoxDecoration(color: Color(0xFF0F0B1A)),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.transparent,
+              const Color(0xFF0F0B1A).withOpacity(0.8),
+              const Color(0xFF0F0B1A).withOpacity(0.95),
+            ],
+          ),
+        ),
         child: Row(
           children: [
             // Generate Button
             Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _currentIndex = 0;
-                  });
-                },
-                child: Container(
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: _currentIndex == 0
-                        ? Colors.transparent
-                        : const Color(0xFF1D162B),
-                    borderRadius: BorderRadius.circular(28),
-                    border: _currentIndex == 0
-                        ? Border.all(color: Color(0xFFFF6A00), width: 2)
-                        : null,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.auto_fix_high,
-                        color: _currentIndex == 0
-                            ? const Color(0xFFFF6A00)
-                            : const Color(0xFF8C7BA6),
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Generate',
-                        style: TextStyle(
-                          color: _currentIndex == 0
-                              ? const Color(0xFFFF6A00)
-                              : const Color(0xFF8C7BA6),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              child: _buildNavButton(
+                index: 0,
+                icon: Icons.auto_fix_high,
+                label: 'Generate',
               ),
             ),
-            const SizedBox(width: 12),
             // Photos Button
             Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _currentIndex = 1;
-                  });
-                },
-                child: Container(
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: _currentIndex == 1
-                        ? const Color(0xFFFF6A00)
-                        : const Color(0xFF1D162B),
-                    borderRadius: BorderRadius.circular(28),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.photo_library, color: Colors.white, size: 20),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Photos',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              child: _buildNavButton(
+                index: 1,
+                icon: Icons.photo_library_outlined,
+                label: 'Photos',
+              ),
+            ),
+            // Prompts Button
+            Expanded(
+              child: _buildNavButton(
+                index: 2,
+                icon: Icons.lightbulb_outline,
+                label: 'Prompts',
+              ),
+            ),
+            // Profile Button
+            Expanded(
+              child: _buildNavButton(
+                index: 3,
+                icon: Icons.person_outline,
+                label: 'Profile',
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildPremiumBanner() {
+    return Container(
+      key: const ValueKey('premium_banner'),
+      height: 40,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFF6A00), Color(0xFFFF8A00), Color(0xFFFFA500)],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFF6A00).withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Premium star icon with animation
+          AnimatedBuilder(
+            animation: _premiumBannerAnimation,
+            builder: (context, child) {
+              return Transform.rotate(
+                angle: _premiumBannerAnimation.value * 2 * 3.14159,
+                child: Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(
+                      0.2 + (_premiumBannerAnimation.value * 0.1),
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.star, color: Colors.white, size: 12),
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+          // Premium text
+          const Text(
+            'Premium Member',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Sparkle effect with animation
+          AnimatedBuilder(
+            animation: _premiumBannerAnimation,
+            builder: (context, child) {
+              return Transform.scale(
+                scale: 0.8 + (_premiumBannerAnimation.value * 0.4),
+                child: Container(
+                  width: 16,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(
+                      0.2 + (_premiumBannerAnimation.value * 0.2),
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.auto_awesome,
+                    color: Colors.white,
+                    size: 10,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
@@ -675,57 +820,36 @@ class _MainNavigationPageState extends State<MainNavigationPage>
         elevation: 0,
         toolbarHeight: AppMetrics.toolbarHeight,
         actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: () async {
-                await Navigator.of(
-                  context,
-                ).push(MaterialPageRoute(builder: (_) => const PurchasePage()));
-                await _loadTokens();
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1D162B),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withOpacity(0.12)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.local_fire_department,
-                      color: Color(0xFFFF6A00),
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '$_tokens',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    const Icon(
-                      Icons.add_circle_outline,
-                      color: Color(0xFFFF6A00),
-                      size: 20,
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          // Token Purchase Button
+          TokenDisplayWidget(
+            onTap: () async {
+              await Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const PurchasePage()));
+            },
           ),
         ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(0),
-          child: Container(),
+          preferredSize: Size.fromHeight(_isPremium ? 40 : 0),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            transitionBuilder: (Widget child, Animation<double> animation) {
+              return SlideTransition(
+                position:
+                    Tween<Offset>(
+                      begin: const Offset(0, -1),
+                      end: Offset.zero,
+                    ).animate(
+                      CurvedAnimation(
+                        parent: animation,
+                        curve: Curves.easeOutBack,
+                      ),
+                    ),
+                child: FadeTransition(opacity: animation, child: child),
+              );
+            },
+            child: _isPremium ? _buildPremiumBanner() : const SizedBox.shrink(),
+          ),
         ),
       ),
       body: Stack(
@@ -1048,6 +1172,73 @@ class _MainNavigationPageState extends State<MainNavigationPage>
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavButton({
+    required int index,
+    required IconData icon,
+    required String label,
+  }) {
+    final isSelected = _currentIndex == index;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _currentIndex = index;
+        });
+      },
+      child: Container(
+        height: 48,
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? const Color(0xFFFF6A00)
+              : const Color(0xFF1D162B).withOpacity(0.9),
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(
+            color: isSelected
+                ? const Color(0xFFFF6A00).withOpacity(0.3)
+                : Colors.white.withOpacity(0.1),
+            width: 1,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFFFF6A00).withOpacity(0.4),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                    spreadRadius: 2,
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? Colors.white : const Color(0xFF8C7BA6),
+              size: 20,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : const Color(0xFF8C7BA6),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -52,4 +52,31 @@ class TokenService {
   static Future<void> refundOne() async {
     await addTokens(1);
   }
+
+  /// Grant monthly premium tokens (20 tokens)
+  static Future<void> grantMonthlyPremiumTokens() async {
+    await addTokens(20);
+  }
+
+  /// Check if user can claim monthly tokens
+  static Future<bool> canClaimMonthlyTokens() async {
+    final prefs = await _prefs();
+    final lastClaimStr = await _secure.read(key: 'last_monthly_token_claim');
+
+    if (lastClaimStr == null) return true;
+
+    final lastClaim = DateTime.parse(lastClaimStr);
+    final now = DateTime.now();
+    final daysSinceLastClaim = now.difference(lastClaim).inDays;
+
+    return daysSinceLastClaim >= 30;
+  }
+
+  /// Mark monthly tokens as claimed
+  static Future<void> markMonthlyTokensClaimed() async {
+    await _secure.write(
+      key: 'last_monthly_token_claim',
+      value: DateTime.now().toIso8601String(),
+    );
+  }
 }

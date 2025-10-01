@@ -53,6 +53,14 @@ app.*.map.json
 secrets.json
 api_keys.json
 
+# API Keys and sensitive configuration files
+lib/core/config/api_keys.dart
+lib/core/services/stability_service.dart
+lib/features/home/presentation/pages/api_key_page.dart
+
+# History files (contain sensitive data)
+.history/
+
 # IDE and editor files
 .vscode/
 .idea/

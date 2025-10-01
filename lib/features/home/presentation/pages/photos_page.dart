@@ -1,8 +1,10 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../../core/theme/app_metrics.dart';
 import '../../../../core/services/image_storage_service.dart';
+import '../../../../core/services/saved_images_provider.dart';
 
 class PhotosPage extends StatefulWidget {
   final VoidCallback? onNavigateToGenerate;
@@ -18,15 +20,10 @@ class _PhotosPageState extends State<PhotosPage> with TickerProviderStateMixin {
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
-  List<SavedImage> _savedImages = [];
-  bool _isLoading = true;
-  Map<String, Uint8List> _imageCache = {};
-
   @override
   void initState() {
     super.initState();
     _initializeAnimations();
-    _loadSavedImages();
   }
 
   void _initializeAnimations() {
@@ -53,65 +50,23 @@ class _PhotosPageState extends State<PhotosPage> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  Future<void> _loadSavedImages() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final images = await ImageStorageService.getSavedImages();
-      setState(() {
-        _savedImages = images;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load images: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
   Future<Uint8List?> _getImageBytes(String imageId, String filePath) async {
-    if (_imageCache.containsKey(imageId)) {
-      return _imageCache[imageId];
-    }
-
-    try {
-      final bytes = await ImageStorageService.getImageBytes(filePath);
-      if (bytes != null) {
-        _imageCache[imageId] = bytes;
-      }
-      return bytes;
-    } catch (e) {
-      return null;
-    }
+    final provider = context.read<SavedImagesProvider>();
+    return await provider.getImageBytes(imageId, filePath);
   }
 
   Future<void> _deleteImage(String imageId) async {
     try {
-      final success = await ImageStorageService.deleteImage(imageId);
-      if (success) {
-        setState(() {
-          _savedImages.removeWhere((img) => img.id == imageId);
-          _imageCache.remove(imageId);
-        });
+      final provider = context.read<SavedImagesProvider>();
+      await provider.deleteById(imageId);
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Image deleted successfully'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Image deleted successfully'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -452,152 +407,158 @@ class _PhotosPageState extends State<PhotosPage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFFF6A00), Color(0xFF9C27B0)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.photo_library_rounded,
-                color: Colors.white,
-                size: 18,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'My Creations (${_savedImages.length})',
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.5,
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: const Color(0xFF0F0B1A),
-        elevation: 0,
-        toolbarHeight: AppMetrics.toolbarHeight,
-        actions: [
-          if (_savedImages.isNotEmpty) ...[
-            IconButton(
-              onPressed: () => _showStorageInfo(),
-              icon: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1D162B),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.1),
-                    width: 1,
+    return Consumer<SavedImagesProvider>(
+      builder: (context, provider, child) {
+        return Scaffold(
+          appBar: AppBar(
+            title: Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFF6A00), Color(0xFF9C27B0)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.photo_library_rounded,
+                    color: Colors.white,
+                    size: 18,
                   ),
                 ),
-                child: const Icon(
-                  Icons.info_outline_rounded,
-                  color: Color(0xFFFF6A00),
-                  size: 20,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            IconButton(
-              onPressed: () => _showClearAllDialog(),
-              icon: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1D162B),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.1),
-                    width: 1,
+                const SizedBox(width: 12),
+                Text(
+                  'My Creations (${provider.images.length})',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.5,
                   ),
                 ),
-                child: const Icon(
-                  Icons.clear_all_rounded,
-                  color: Colors.red,
-                  size: 20,
+              ],
+            ),
+            backgroundColor: const Color(0xFF0F0B1A),
+            elevation: 0,
+            toolbarHeight: AppMetrics.toolbarHeight,
+            actions: [
+              if (provider.images.isNotEmpty) ...[
+                IconButton(
+                  onPressed: () => _showStorageInfo(),
+                  icon: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1D162B),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.1),
+                        width: 1,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.info_outline_rounded,
+                      color: Color(0xFFFF6A00),
+                      size: 20,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: () => _showClearAllDialog(),
+                  icon: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1D162B),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.1),
+                        width: 1,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.clear_all_rounded,
+                      color: Colors.red,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(
+                AppMetrics.photosBottomHeight,
+              ),
+              child: Container(
+                height: 44,
+                margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFF6A00), Color(0xFF9C27B0)],
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    provider.images.isEmpty
+                        ? 'Your spooky creations will appear here!'
+                        : 'Your spooky creations are waiting for you!',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
             ),
-          ],
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(AppMetrics.photosBottomHeight),
-          child: Container(
-            height: 44,
-            margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              gradient: const LinearGradient(
-                colors: [Color(0xFFFF6A00), Color(0xFF9C27B0)],
-              ),
-            ),
-            child: Center(
-              child: Text(
-                _savedImages.isEmpty
-                    ? 'Your spooky creations will appear here!'
-                    : 'Your spooky creations are waiting for you!',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
+          ),
+          body: Stack(
+            children: [
+              // Background decorations
+              Positioned(
+                bottom: 40,
+                left: 20,
+                child: Opacity(
+                  opacity: 0.06,
+                  child: Text('🕸️', style: TextStyle(fontSize: 80)),
                 ),
               ),
-            ),
-          ),
-        ),
-      ),
-      body: Stack(
-        children: [
-          // Background decorations
-          Positioned(
-            bottom: 40,
-            left: 20,
-            child: Opacity(
-              opacity: 0.06,
-              child: Text('🕸️', style: TextStyle(fontSize: 80)),
-            ),
-          ),
-          Positioned(
-            top: 60,
-            right: 20,
-            child: Opacity(
-              opacity: 0.04,
-              child: Text('🎃', style: TextStyle(fontSize: 60)),
-            ),
-          ),
+              Positioned(
+                top: 60,
+                right: 20,
+                child: Opacity(
+                  opacity: 0.04,
+                  child: Text('🎃', style: TextStyle(fontSize: 60)),
+                ),
+              ),
 
-          // Main content
-          FadeTransition(
-            opacity: _fadeAnimation,
-            child: SlideTransition(
-              position: _slideAnimation,
-              child: _buildBody(),
-            ),
+              // Main content
+              FadeTransition(
+                opacity: _fadeAnimation,
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: _buildBody(provider),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildBody() {
-    if (_isLoading) {
+  Widget _buildBody(SavedImagesProvider provider) {
+    if (provider.isLoading) {
       return const Center(
         child: CircularProgressIndicator(color: Color(0xFFFF6A00)),
       );
     }
 
-    if (_savedImages.isEmpty) {
+    if (provider.images.isEmpty) {
       return _buildEmptyState();
     }
 
@@ -610,9 +571,9 @@ class _PhotosPageState extends State<PhotosPage> with TickerProviderStateMixin {
           crossAxisSpacing: 16,
           childAspectRatio: 0.85,
         ),
-        itemCount: _savedImages.length,
+        itemCount: provider.images.length,
         itemBuilder: (context, index) {
-          final image = _savedImages[index];
+          final image = provider.images[index];
           return _buildPhotoCard(image);
         },
       ),
@@ -1053,8 +1014,9 @@ class _PhotosPageState extends State<PhotosPage> with TickerProviderStateMixin {
           FilledButton(
             onPressed: () async {
               Navigator.pop(context);
+              final provider = context.read<SavedImagesProvider>();
               await ImageStorageService.clearAllImages();
-              await _loadSavedImages();
+              await provider.refresh();
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(

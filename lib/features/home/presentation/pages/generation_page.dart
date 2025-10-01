@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/config/api_keys.dart';
 import '../../../../core/services/stability_service.dart';
-import '../../../../core/services/token_service.dart';
+import '../../../../core/services/token_provider.dart';
+import '../../../../core/widgets/token_display_widget.dart';
 import '../../../../core/utils/prompt_builder.dart';
 import '../../../../core/models/generated_image.dart';
 import '../../../../core/services/image_storage_service.dart';
@@ -49,9 +50,6 @@ class _GenerationPageState extends State<GenerationPage>
   String _selectedLighting = '';
   String _selectedEffect = '';
 
-  // Token management
-  int _tokenBalance = 0;
-
   // COMMENTED OUT: Ghostface Trend toggle disabled
   // bool _useGhostfaceTrend = false;
   // removed preset image toggle
@@ -82,17 +80,7 @@ class _GenerationPageState extends State<GenerationPage>
         );
 
     _fadeController.forward();
-    _loadTokenBalance();
     _loadSavedImages();
-  }
-
-  Future<void> _loadTokenBalance() async {
-    final balance = await TokenService.getBalance();
-    if (mounted) {
-      setState(() {
-        _tokenBalance = balance;
-      });
-    }
   }
 
   Future<void> _loadSavedImages() async {
@@ -168,7 +156,8 @@ class _GenerationPageState extends State<GenerationPage>
     }
 
     // Check token balance
-    if (_tokenBalance <= 0) {
+    final tokenProvider = context.read<TokenProvider>();
+    if (tokenProvider.balance <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -247,7 +236,7 @@ class _GenerationPageState extends State<GenerationPage>
       if (!mounted) return;
 
       // Consume one token for successful generation
-      final tokenConsumed = await TokenService.consumeOne();
+      final tokenConsumed = await tokenProvider.consumeOne();
       if (!tokenConsumed) {
         // This shouldn't happen as we checked earlier, but just in case
         ScaffoldMessenger.of(context).showSnackBar(
@@ -258,9 +247,6 @@ class _GenerationPageState extends State<GenerationPage>
         );
         return;
       }
-
-      // Update token balance
-      await _loadTokenBalance();
 
       // Create GeneratedImage object with metadata
       final generatedImage = GeneratedImage(
@@ -287,8 +273,7 @@ class _GenerationPageState extends State<GenerationPage>
       } catch (_) {}
 
       // Refund token on failure
-      await TokenService.refundOne();
-      await _loadTokenBalance();
+      await tokenProvider.refundOne();
 
       ScaffoldMessenger.of(
         context,
@@ -406,33 +391,7 @@ class _GenerationPageState extends State<GenerationPage>
           ),
           actions: [
             // Token balance indicator
-            Container(
-              margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: _tokenBalance > 0 ? const Color(0xFFB25AFF) : Colors.red,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    _tokenBalance > 0 ? Icons.token : Icons.warning,
-                    size: 16,
-                    color: Colors.white,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '$_tokenBalance',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            const TokenBalanceIndicator(),
             if (!_hasStabilityKey)
               IconButton(
                 onPressed: () {
@@ -523,29 +482,33 @@ class _GenerationPageState extends State<GenerationPage>
                             padding: const EdgeInsets.all(16),
                             child: SizedBox(
                               width: double.infinity,
-                              child: FilledButton.icon(
-                                onPressed:
-                                    _hasStabilityKey &&
-                                        !_isGenerating &&
-                                        _tokenBalance > 0
-                                    ? _generateImage
-                                    : null,
-                                icon: _isGenerating
-                                    ? const LoadingIndicator(size: 20)
-                                    : const Icon(Icons.auto_fix_high),
-                                label: Text(
-                                  _isGenerating
-                                      ? 'Generating...'
-                                      : _tokenBalance <= 0
-                                      ? 'No Tokens ($_tokenBalance)'
-                                      : 'Generate Image ($_tokenBalance tokens)',
-                                ),
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: const Color(0xFFB25AFF),
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 16,
-                                  ),
-                                ),
+                              child: Consumer<TokenProvider>(
+                                builder: (context, tokenProvider, child) {
+                                  return FilledButton.icon(
+                                    onPressed:
+                                        _hasStabilityKey &&
+                                            !_isGenerating &&
+                                            tokenProvider.balance > 0
+                                        ? _generateImage
+                                        : null,
+                                    icon: _isGenerating
+                                        ? const LoadingIndicator(size: 20)
+                                        : const Icon(Icons.auto_fix_high),
+                                    label: Text(
+                                      _isGenerating
+                                          ? 'Generating...'
+                                          : tokenProvider.balance <= 0
+                                          ? 'No Tokens (${tokenProvider.balance})'
+                                          : 'Generate Image (${tokenProvider.balance} tokens)',
+                                    ),
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: const Color(0xFFB25AFF),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
                             ),
                           ),
