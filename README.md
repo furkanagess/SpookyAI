@@ -96,20 +96,20 @@
 <div align="center">
   
   ### 🎃 **Main Interface**
-  <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 20px; margin: 30px 0;">
-    <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.28.56.png" alt="Main Screen" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
-    <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.29.08.png" alt="Generation Screen" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
-    <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.39.53.png" alt="Image Upload" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+  <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 16px; margin: 24px 0;">
+    <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.28.56.png" alt="Main Screen" width="220" style="border-radius: 16px; box-shadow: 0 6px 24px rgba(0,0,0,0.25);">
+    <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.29.08.png" alt="Generation Screen" width="220" style="border-radius: 16px; box-shadow: 0 6px 24px rgba(0,0,0,0.25);">
+    <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.39.53.png" alt="Image Upload" width="220" style="border-radius: 16px; box-shadow: 0 6px 24px rgba(0,0,0,0.25);">
   </div>
   
   <details style="margin: 20px 0;">
     <summary style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 18px;">
       🎨 AI Generation Features
     </summary>
-    <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 20px; margin: 20px 0;">
-      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.39.59.png" alt="Prompt Input" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
-      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.07.png" alt="Mode Selection" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
-      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.23.png" alt="Generation Process" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+    <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 16px; margin: 16px 0;">
+      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.39.59.png" alt="Prompt Input" width="220" style="border-radius: 16px; box-shadow: 0 6px 24px rgba(0,0,0,0.25);">
+      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.07.png" alt="Mode Selection" width="220" style="border-radius: 16px; box-shadow: 0 6px 24px rgba(0,0,0,0.25);">
+      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.23.png" alt="Generation Process" width="220" style="border-radius: 16px; box-shadow: 0 6px 24px rgba(0,0,0,0.25);">
     </div>
   </details>
   
@@ -117,10 +117,10 @@
     <summary style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); color: white; padding: 15px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 18px;">
       📸 Results & Gallery
     </summary>
-    <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 20px; margin: 20px 0;">
-      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.38.png" alt="Generated Image" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
-      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.43.28.png" alt="Gallery View" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
-      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.43.32.png" alt="Settings" width="280" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+    <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 16px; margin: 16px 0;">
+      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.38.png" alt="Generated Image" width="220" style="border-radius: 16px; box-shadow: 0 6px 24px rgba(0,0,0,0.25);">
+      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.43.28.png" alt="Gallery View" width="220" style="border-radius: 16px; box-shadow: 0 6px 24px rgba(0,0,0,0.25);">
+      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.43.32.png" alt="Settings" width="220" style="border-radius: 16px; box-shadow: 0 6px 24px rgba(0,0,0,0.25);">
     </div>
   </details>
   
@@ -140,7 +140,7 @@
   <div style="background: #ffffff; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden; border: 1px solid #eee;">
     <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 16px; font-weight: 700;">Home • Photos & Generate</div>
     <div style="padding: 16px;">
-      <img src="assets/ss/photos.png" alt="Photos & Generate" width="100%" style="border-radius: 12px; display: block;">
+      <img src="assets/ss/photos.png" alt="Photos & Generate" width="100%" style="max-width: 340px; margin: 0 auto; border-radius: 12px; display: block;">
       <p style="color: #555; margin: 12px 0 8px 0;">Your creative hub. Access recent results, start a new generation, or pick a Halloween theme.</p>
       <ul style="margin: 0 0 0 18px; color: #666;">
         <li>One‑tap start for text‑to‑image or image‑to‑image</li>
@@ -153,7 +153,7 @@
   <div style="background: #ffffff; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden; border: 1px solid #eee;">
     <div style="background: linear-gradient(135deg, #ff9068 0%, #fd746c 100%); color: white; padding: 12px 16px; font-weight: 700;">Empty State • First Use</div>
     <div style="padding: 16px;">
-      <img src="assets/ss/empty_photo.png" alt="Empty Photo State" width="100%" style="border-radius: 12px; display: block;">
+      <img src="assets/ss/empty_photo.png" alt="Empty Photo State" width="100%" style="max-width: 340px; margin: 0 auto; border-radius: 12px; display: block;">
       <p style="color: #555; margin: 12px 0 8px 0;">Delightful onboarding when you have no creations yet. Clear actions guide you to your first spooky masterpiece.</p>
       <ul style="margin: 0 0 0 18px; color: #666;">
         <li>Prominent CTA to upload a photo or write a prompt</li>
@@ -166,7 +166,7 @@
   <div style="background: #ffffff; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden; border: 1px solid #eee;">
     <div style="background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%); color: white; padding: 12px 16px; font-weight: 700;">Daily Spin • Free Tokens</div>
     <div style="padding: 16px;">
-      <img src="assets/ss/spin.png" alt="Daily Spin" width="100%" style="border-radius: 12px; display: block;">
+      <img src="assets/ss/spin.png" alt="Daily Spin" width="100%" style="max-width: 340px; margin: 0 auto; border-radius: 12px; display: block;">
       <p style="color: #555; margin: 12px 0 8px 0;">A gamified daily reward. Spin the wheel and instantly receive tokens—perfect for daily engagement.</p>
       <ul style="margin: 0 0 0 18px; color: #666;">
         <li>Instant token grant after the wheel stops</li>
@@ -179,7 +179,7 @@
   <div style="background: #ffffff; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden; border: 1px solid #eee;">
     <div style="background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%); color: white; padding: 12px 16px; font-weight: 700;">Statistics • Streaks & Insights</div>
     <div style="padding: 16px;">
-      <img src="assets/ss/statistics.png" alt="Statistics & Streaks" width="100%" style="border-radius: 12px; display: block;">
+      <img src="assets/ss/statistics.png" alt="Statistics & Streaks" width="100%" style="max-width: 340px; margin: 0 auto; border-radius: 12px; display: block;">
       <p style="color: #555; margin: 12px 0 8px 0;">Track your creative journey: streaks, total logins, and highlights that motivate you to create more.</p>
       <ul style="margin: 0 0 0 18px; color: #666;">
         <li>Daily streak visualization encourages consistency</li>
