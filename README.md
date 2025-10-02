@@ -96,32 +96,65 @@
 <div align="center">
   
   ### 🎃 **Main Interface**
-  <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 16px; margin: 24px 0;">
-    <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.28.56.png" alt="Main Screen" width="220" style="border-radius: 16px; box-shadow: 0 6px 24px rgba(0,0,0,0.25);">
-    <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.29.08.png" alt="Generation Screen" width="220" style="border-radius: 16px; box-shadow: 0 6px 24px rgba(0,0,0,0.25);">
-    <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.39.53.png" alt="Image Upload" width="220" style="border-radius: 16px; box-shadow: 0 6px 24px rgba(0,0,0,0.25);">
-  </div>
+  <table style="margin: 0 auto; border-collapse: collapse;">
+    <tr>
+      <td style="padding: 8px; text-align: center;">
+        <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.28.56.png" alt="Main Screen" width="180" style="border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
+        <div style="font-size: 12px; color: #666; margin-top: 6px;">Main Screen</div>
+      </td>
+      <td style="padding: 8px; text-align: center;">
+        <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.29.08.png" alt="Generation" width="180" style="border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
+        <div style="font-size: 12px; color: #666; margin-top: 6px;">Generation</div>
+      </td>
+      <td style="padding: 8px; text-align: center;">
+        <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.39.53.png" alt="Upload" width="180" style="border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
+        <div style="font-size: 12px; color: #666; margin-top: 6px;">Upload</div>
+      </td>
+    </tr>
+  </table>
   
   <details style="margin: 20px 0;">
     <summary style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 18px;">
       🎨 AI Generation Features
     </summary>
-    <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 16px; margin: 16px 0;">
-      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.39.59.png" alt="Prompt Input" width="220" style="border-radius: 16px; box-shadow: 0 6px 24px rgba(0,0,0,0.25);">
-      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.07.png" alt="Mode Selection" width="220" style="border-radius: 16px; box-shadow: 0 6px 24px rgba(0,0,0,0.25);">
-      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.23.png" alt="Generation Process" width="220" style="border-radius: 16px; box-shadow: 0 6px 24px rgba(0,0,0,0.25);">
-    </div>
+    <table style="margin: 10px auto; border-collapse: collapse;">
+      <tr>
+        <td style="padding: 8px; text-align: center;">
+          <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.39.59.png" alt="Prompt Input" width="180" style="border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
+          <div style="font-size: 12px; color: #666; margin-top: 6px;">Prompt Input</div>
+        </td>
+        <td style="padding: 8px; text-align: center;">
+          <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.07.png" alt="Mode Selection" width="180" style="border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
+          <div style="font-size: 12px; color: #666; margin-top: 6px;">Mode Selection</div>
+        </td>
+        <td style="padding: 8px; text-align: center;">
+          <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.23.png" alt="Generation Process" width="180" style="border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
+          <div style="font-size: 12px; color: #666; margin-top: 6px;">Generation Process</div>
+        </td>
+      </tr>
+    </table>
   </details>
   
   <details style="margin: 20px 0;">
     <summary style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); color: white; padding: 15px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 18px;">
       📸 Results & Gallery
     </summary>
-    <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 16px; margin: 16px 0;">
-      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.38.png" alt="Generated Image" width="220" style="border-radius: 16px; box-shadow: 0 6px 24px rgba(0,0,0,0.25);">
-      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.43.28.png" alt="Gallery View" width="220" style="border-radius: 16px; box-shadow: 0 6px 24px rgba(0,0,0,0.25);">
-      <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.43.32.png" alt="Settings" width="220" style="border-radius: 16px; box-shadow: 0 6px 24px rgba(0,0,0,0.25);">
-    </div>
+    <table style="margin: 10px auto; border-collapse: collapse;">
+      <tr>
+        <td style="padding: 8px; text-align: center;">
+          <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.38.png" alt="Generated Image" width="180" style="border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
+          <div style="font-size: 12px; color: #666; margin-top: 6px;">Generated</div>
+        </td>
+        <td style="padding: 8px; text-align: center;">
+          <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.43.28.png" alt="Gallery View" width="180" style="border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
+          <div style="font-size: 12px; color: #666; margin-top: 6px;">Gallery</div>
+        </td>
+        <td style="padding: 8px; text-align: center;">
+          <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.43.32.png" alt="Settings" width="180" style="border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
+          <div style="font-size: 12px; color: #666; margin-top: 6px;">Settings</div>
+        </td>
+      </tr>
+    </table>
   </details>
   
   <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 20px; margin: 30px 0; color: white; text-align: center;">
