@@ -133,6 +133,71 @@
 
 ---
 
+## 🧭 Detailed Screens & UX Flow
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin: 26px 0;">
+
+  <div style="background: #ffffff; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden; border: 1px solid #eee;">
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 16px; font-weight: 700;">Home • Photos & Generate</div>
+    <div style="padding: 16px;">
+      <img src="assets/ss/photos.png" alt="Photos & Generate" width="100%" style="border-radius: 12px; display: block;">
+      <p style="color: #555; margin: 12px 0 8px 0;">Your creative hub. Access recent results, start a new generation, or pick a Halloween theme.</p>
+      <ul style="margin: 0 0 0 18px; color: #666;">
+        <li>One‑tap start for text‑to‑image or image‑to‑image</li>
+        <li>Token balance always visible for clarity</li>
+        <li>Premium badge highlights extra perks instantly</li>
+      </ul>
+    </div>
+  </div>
+
+  <div style="background: #ffffff; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden; border: 1px solid #eee;">
+    <div style="background: linear-gradient(135deg, #ff9068 0%, #fd746c 100%); color: white; padding: 12px 16px; font-weight: 700;">Empty State • First Use</div>
+    <div style="padding: 16px;">
+      <img src="assets/ss/empty_photo.png" alt="Empty Photo State" width="100%" style="border-radius: 12px; display: block;">
+      <p style="color: #555; margin: 12px 0 8px 0;">Delightful onboarding when you have no creations yet. Clear actions guide you to your first spooky masterpiece.</p>
+      <ul style="margin: 0 0 0 18px; color: #666;">
+        <li>Prominent CTA to upload a photo or write a prompt</li>
+        <li>Subtle tips about best prompts and themes</li>
+        <li>Lightweight visuals keep focus on the main action</li>
+      </ul>
+    </div>
+  </div>
+
+  <div style="background: #ffffff; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden; border: 1px solid #eee;">
+    <div style="background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%); color: white; padding: 12px 16px; font-weight: 700;">Daily Spin • Free Tokens</div>
+    <div style="padding: 16px;">
+      <img src="assets/ss/spin.png" alt="Daily Spin" width="100%" style="border-radius: 12px; display: block;">
+      <p style="color: #555; margin: 12px 0 8px 0;">A gamified daily reward. Spin the wheel and instantly receive tokens—perfect for daily engagement.</p>
+      <ul style="margin: 0 0 0 18px; color: #666;">
+        <li>Instant token grant after the wheel stops</li>
+        <li>Premium users unlock the spin and get better momentum</li>
+        <li>Elegant pointer and smooth animation for a satisfying feel</li>
+      </ul>
+    </div>
+  </div>
+
+  <div style="background: #ffffff; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden; border: 1px solid #eee;">
+    <div style="background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%); color: white; padding: 12px 16px; font-weight: 700;">Statistics • Streaks & Insights</div>
+    <div style="padding: 16px;">
+      <img src="assets/ss/statistics.png" alt="Statistics & Streaks" width="100%" style="border-radius: 12px; display: block;">
+      <p style="color: #555; margin: 12px 0 8px 0;">Track your creative journey: streaks, total logins, and highlights that motivate you to create more.</p>
+      <ul style="margin: 0 0 0 18px; color: #666;">
+        <li>Daily streak visualization encourages consistency</li>
+        <li>Lightweight charts render fast and look clean</li>
+        <li>Privacy‑friendly: only device‑side aggregates</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 26px; border-radius: 18px; color: white; text-align: center;">
+  <h3 style="margin: 0 0 10px 0;">Create. Share. Spook the World.</h3>
+  <p style="margin: 0; opacity: .95;">From your first prompt to a gallery full of eerie art—SpookyAI makes every step delightful.</p>
+</div>
+
+---
+
 ## 🛠️ Technical Stack
 
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 30px 0;">

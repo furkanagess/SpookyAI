@@ -91,7 +91,7 @@ class PurchaseProvider extends ChangeNotifier {
       const Pack(
         name: '1 Token',
         tokens: 1,
-        productId: '1_token_049',
+        productId: '1_token',
         price: '0.49',
         note: 'Quick pack for a single image',
         imageAsset: 'assets/images/spider.png',
@@ -100,7 +100,7 @@ class PurchaseProvider extends ChangeNotifier {
       const Pack(
         name: '10 Token',
         tokens: 10,
-        productId: '10_token_299',
+        productId: '10_token',
         price: '2.99',
         note: 'Great for small trials 🎃',
         imageAsset: 'assets/images/pumpkin.png',
@@ -108,7 +108,7 @@ class PurchaseProvider extends ChangeNotifier {
       const Pack(
         name: '25 Token',
         tokens: 25,
-        productId: '25_token_599',
+        productId: '25_token',
         price: '5.99',
         note: 'Most popular choice 👻',
         imageAsset: 'assets/images/haunted-house.png',
@@ -116,7 +116,7 @@ class PurchaseProvider extends ChangeNotifier {
       const Pack(
         name: '60 Token',
         tokens: 60,
-        productId: '60_token_1199',
+        productId: '60_token',
         price: '11.99',
         note: 'For regular creators 🧙',
         imageAsset: 'assets/images/witch-hat.png',
@@ -124,7 +124,7 @@ class PurchaseProvider extends ChangeNotifier {
       const Pack(
         name: '150 Token',
         tokens: 150,
-        productId: '150_token_2499',
+        productId: '150_token',
         price: '24.99',
         note: 'For power users 💀',
         imageAsset: 'assets/images/ghost-face.png',
@@ -152,9 +152,9 @@ class PurchaseProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Buy a pack
-  Future<void> buyPack(Pack pack) async {
-    if (_isLoading) return;
+  // Buy a pack, returns true if purchase completed successfully
+  Future<bool> buyPack(Pack pack) async {
+    if (_isLoading) return false;
 
     setLoading(true);
 
@@ -176,11 +176,14 @@ class PurchaseProvider extends ChangeNotifier {
         }
 
         debugPrint('PurchaseProvider: Purchase successful for ${pack.name}');
+        return true;
       } else {
         debugPrint('PurchaseProvider: Purchase failed for ${pack.name}');
+        return false;
       }
     } catch (e) {
       debugPrint('PurchaseProvider: Error during purchase: $e');
+      return false;
     } finally {
       setLoading(false);
     }

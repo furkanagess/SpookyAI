@@ -14,19 +14,19 @@ class InAppPurchaseService {
 
   // App Store Product IDs matching your configuration
   static const Map<String, int> _productTokenMap = {
-    '1_token_049': 1,
-    '10_token_299': 10,
-    '25_token_599': 25,
-    '60_token_1199': 60,
-    '150_token_2499': 150,
+    '1_token': 1,
+    '10_token': 10,
+    '25_token': 25,
+    '60_token': 60,
+    '150_token': 150,
   };
 
   static const Set<String> _productIds = {
-    '1_token_049',
-    '10_token_299',
-    '25_token_599',
-    '60_token_1199',
-    '150_token_2499',
+    '1_token',
+    '10_token',
+    '25_token',
+    '60_token',
+    '150_token',
   };
 
   static bool _isAvailable = false;
@@ -116,9 +116,13 @@ class InAppPurchaseService {
       final PurchaseParam purchaseParam = PurchaseParam(
         productDetails: product,
       );
-      final bool success = await _inAppPurchase.buyNonConsumable(
-        purchaseParam: purchaseParam,
-      );
+      final bool isPremium = productId == 'spookyai_premium';
+      final bool success = isPremium
+          ? await _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam)
+          : await _inAppPurchase.buyConsumable(
+              purchaseParam: purchaseParam,
+              autoConsume: true,
+            );
 
       if (!success) {
         _purchasePending = false;

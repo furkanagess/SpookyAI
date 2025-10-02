@@ -27,9 +27,11 @@ class _PurchasePageState extends State<PurchasePage> {
     if (provider.isLoading) return;
 
     try {
-      await provider.buyPack(pack);
+      final bool success = await provider.buyPack(pack);
 
-      if (mounted) {
+      if (!mounted) return;
+
+      if (success) {
         if (pack.isPremium) {
           await showPurchaseSuccessDialog(
             context,
@@ -42,6 +44,11 @@ class _PurchasePageState extends State<PurchasePage> {
           await tokenProvider.refreshBalance();
           await showPurchaseSuccessDialog(context, tokensAdded: pack.tokens);
         }
+      } else {
+        await PurchaseFailedDialog.show(
+          context,
+          reason: 'Purchase was not completed.',
+        );
       }
     } catch (e) {
       if (mounted) {
