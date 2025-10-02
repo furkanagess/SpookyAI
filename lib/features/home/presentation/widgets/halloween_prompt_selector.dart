@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/models/halloween_prompt_data.dart';
+import '../../../../core/services/halloween_prompt_provider.dart';
 
 class HalloweenPromptSelector extends StatefulWidget {
   final Function(String setting, String lighting, String effect)
@@ -22,135 +24,127 @@ class HalloweenPromptSelector extends StatefulWidget {
 }
 
 class _HalloweenPromptSelectorState extends State<HalloweenPromptSelector> {
-  late String _selectedSetting;
-  late String _selectedLighting;
-  late String _selectedEffect;
-
   @override
   void initState() {
     super.initState();
-    _selectedSetting =
-        widget.initialSetting ?? HalloweenPromptData.getRandomSetting();
-    _selectedLighting =
-        widget.initialLighting ?? HalloweenPromptData.getRandomLighting();
-    _selectedEffect =
-        widget.initialEffect ?? HalloweenPromptData.getRandomEffect();
-    _notifyParent();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<HalloweenPromptProvider>().initialize(
+        initialSetting: widget.initialSetting,
+        initialLighting: widget.initialLighting,
+        initialEffect: widget.initialEffect,
+      );
+      _notifyParent();
+    });
   }
 
   void _notifyParent() {
+    final provider = context.read<HalloweenPromptProvider>();
     widget.onSelectionChanged(
-      _selectedSetting,
-      _selectedLighting,
-      _selectedEffect,
+      provider.selectedSetting,
+      provider.selectedLighting,
+      provider.selectedEffect,
     );
   }
 
   void _selectRandom() {
-    setState(() {
-      _selectedSetting = HalloweenPromptData.getRandomSetting();
-      _selectedLighting = HalloweenPromptData.getRandomLighting();
-      _selectedEffect = HalloweenPromptData.getRandomEffect();
-    });
+    context.read<HalloweenPromptProvider>().selectRandom();
     _notifyParent();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF1D162B),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.08)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header with randomize button
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.auto_fix_high,
-                  color: Color(0xFFB25AFF),
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                const Text(
-                  'Halloween Prompt Elements',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                    fontSize: 16,
-                  ),
-                ),
-                const Spacer(),
-                TextButton.icon(
-                  onPressed: _selectRandom,
-                  icon: const Icon(Icons.shuffle, size: 16),
-                  label: const Text('Randomize'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFFB25AFF),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
+    return Consumer<HalloweenPromptProvider>(
+      builder: (context, provider, child) {
+        return Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF1D162B),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withOpacity(0.08)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with randomize button
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.auto_fix_high,
+                      color: Color(0xFFB25AFF),
+                      size: 20,
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Halloween Prompt Elements',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const Spacer(),
+                    TextButton.icon(
+                      onPressed: _selectRandom,
+                      icon: const Icon(Icons.shuffle, size: 16),
+                      label: const Text('Randomize'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFFB25AFF),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
 
-          // SETTING Section
-          _buildSection(
-            title: 'SETTING',
-            subtitle: '(rasgele seç)',
-            options: HalloweenPromptData.settings,
-            selectedOption: _selectedSetting,
-            onOptionSelected: (option) {
-              setState(() {
-                _selectedSetting = option;
-              });
-              _notifyParent();
-            },
-            icon: Icons.location_on_outlined,
-            color: const Color(0xFFB25AFF),
-          ),
+              // SETTING Section
+              _buildSection(
+                title: 'SETTING',
+                subtitle: '(rasgele seç)',
+                options: HalloweenPromptData.settings,
+                selectedOption: provider.selectedSetting,
+                onOptionSelected: (option) {
+                  provider.updateSetting(option);
+                  _notifyParent();
+                },
+                icon: Icons.location_on_outlined,
+                color: const Color(0xFFB25AFF),
+              ),
 
-          // LIGHTING Section
-          _buildSection(
-            title: 'LIGHTING',
-            subtitle: '(rasgele seç)',
-            options: HalloweenPromptData.lighting,
-            selectedOption: _selectedLighting,
-            onOptionSelected: (option) {
-              setState(() {
-                _selectedLighting = option;
-              });
-              _notifyParent();
-            },
-            icon: Icons.light_mode_outlined,
-            color: const Color(0xFFF59E0B),
-          ),
+              // LIGHTING Section
+              _buildSection(
+                title: 'LIGHTING',
+                subtitle: '(rasgele seç)',
+                options: HalloweenPromptData.lighting,
+                selectedOption: provider.selectedLighting,
+                onOptionSelected: (option) {
+                  provider.updateLighting(option);
+                  _notifyParent();
+                },
+                icon: Icons.light_mode_outlined,
+                color: const Color(0xFFF59E0B),
+              ),
 
-          // EFFECTS Section
-          _buildSection(
-            title: 'EFFECTS',
-            subtitle: '(rasgele seç)',
-            options: HalloweenPromptData.effects,
-            selectedOption: _selectedEffect,
-            onOptionSelected: (option) {
-              setState(() {
-                _selectedEffect = option;
-              });
-              _notifyParent();
-            },
-            icon: Icons.auto_awesome,
-            color: const Color(0xFF06B6D4),
+              // EFFECTS Section
+              _buildSection(
+                title: 'EFFECTS',
+                subtitle: '(rasgele seç)',
+                options: HalloweenPromptData.effects,
+                selectedOption: provider.selectedEffect,
+                onOptionSelected: (option) {
+                  provider.updateEffect(option);
+                  _notifyParent();
+                },
+                icon: Icons.auto_awesome,
+                color: const Color(0xFF06B6D4),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

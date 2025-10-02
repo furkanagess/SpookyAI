@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../../core/services/prompt_input_provider.dart';
 
 class PromptInputWidget extends StatefulWidget {
   const PromptInputWidget({
@@ -18,7 +20,6 @@ class PromptInputWidget extends StatefulWidget {
 
 class _PromptInputWidgetState extends State<PromptInputWidget> {
   late final TextEditingController _controller;
-  int _characterCount = 0;
 
   @override
   void initState() {
@@ -26,13 +27,14 @@ class _PromptInputWidgetState extends State<PromptInputWidget> {
     _controller = TextEditingController();
     if (widget.initialText != null && widget.initialText!.isNotEmpty) {
       _controller.text = widget.initialText!;
-      _characterCount = _controller.text.length;
     }
     _controller.addListener(() {
-      setState(() {
-        _characterCount = _controller.text.length;
-      });
+      context.read<PromptInputProvider>().updateText(_controller.text);
       widget.onPromptChanged(_controller.text);
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<PromptInputProvider>().initialize(widget.initialText);
     });
   }
 
@@ -58,67 +60,75 @@ class _PromptInputWidgetState extends State<PromptInputWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF1D162B),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Row(
-              children: [
-                const Icon(Icons.edit_note, color: Color(0xFFB25AFF), size: 20),
-                const SizedBox(width: 8),
-                const Text(
-                  'Prompt',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  '$_characterCount/500',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: _characterCount > 500
-                        ? Colors.red
-                        : const Color(0xFF8C7BA6),
-                  ),
-                ),
-              ],
-            ),
+    return Consumer<PromptInputProvider>(
+      builder: (context, provider, child) {
+        return Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF1D162B),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: TextField(
-              controller: _controller,
-              minLines: 3,
-              maxLines: 6,
-              maxLength: 500,
-              style: const TextStyle(color: Colors.white, fontSize: 14),
-              decoration: InputDecoration(
-                hintText: widget.hintText,
-                hintStyle: const TextStyle(
-                  color: Color(0xFF8C7BA6),
-                  fontSize: 14,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.edit_note,
+                      color: Color(0xFFB25AFF),
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Prompt',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '${provider.characterCount}/500',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: provider.isOverLimit
+                            ? Colors.red
+                            : const Color(0xFF8C7BA6),
+                      ),
+                    ),
+                  ],
                 ),
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.zero,
-                counterText: '',
               ),
-              keyboardAppearance: Brightness.dark,
-              textInputAction: TextInputAction.newline,
-              scrollPadding: const EdgeInsets.only(bottom: 220),
-            ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: TextField(
+                  controller: _controller,
+                  minLines: 3,
+                  maxLines: 6,
+                  maxLength: 500,
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: widget.hintText,
+                    hintStyle: const TextStyle(
+                      color: Color(0xFF8C7BA6),
+                      fontSize: 14,
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                    counterText: '',
+                  ),
+                  keyboardAppearance: Brightness.dark,
+                  textInputAction: TextInputAction.newline,
+                  scrollPadding: const EdgeInsets.only(bottom: 220),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

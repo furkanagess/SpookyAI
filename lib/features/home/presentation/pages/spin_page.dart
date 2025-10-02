@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../core/services/spin_service.dart';
-import '../../../../core/services/premium_service.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/services/notification_service.dart';
+import '../../../../core/services/spin_provider.dart';
 import '../widgets/redesigned_spin_wheel.dart';
 
 class SpinPage extends StatefulWidget {
@@ -12,10 +12,6 @@ class SpinPage extends StatefulWidget {
 }
 
 class _SpinPageState extends State<SpinPage> with TickerProviderStateMixin {
-  bool _isLoading = true;
-  bool _isPremium = false;
-  int _remainingSpins = 0;
-
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -24,7 +20,10 @@ class _SpinPageState extends State<SpinPage> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _initializeAnimations();
-    _loadSpinData();
+    // Initialize provider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<SpinProvider>().initialize();
+    });
   }
 
   @override
@@ -51,82 +50,61 @@ class _SpinPageState extends State<SpinPage> with TickerProviderStateMixin {
     _fadeController.forward();
   }
 
-  Future<void> _loadSpinData() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final isPremium = await PremiumService.isPremiumUser();
-      final remainingSpins = await SpinService.getRemainingSpins();
-
-      setState(() {
-        _isPremium = isPremium;
-        _remainingSpins = remainingSpins;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      NotificationService.error(
-        context,
-        message: 'Failed to load spin data. Please try again.',
-      );
-    }
-  }
-
-  Future<void> _onSpinComplete() async {
+  Future<void> _onSpinComplete(SpinProvider provider) async {
     // Reload data after spin
-    await _loadSpinData();
+    await provider.reloadData();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F0B1A),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0F0B1A),
-        elevation: 0,
-        title: const Text(
-          'Daily Spin Wheel',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
-        centerTitle: true,
-        leading: IconButton(
-          onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-        ),
-      ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFFFF6A00)),
-            )
-          : FadeTransition(
-              opacity: _fadeAnimation,
-              child: SlideTransition(
-                position: _slideAnimation,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      // Spin Wheel
-                      _buildSpinWheelSection(),
-
-                      const SizedBox(height: 24),
-                    ],
-                  ),
-                ),
+    return Consumer<SpinProvider>(
+      builder: (context, provider, child) {
+        return Scaffold(
+          backgroundColor: const Color(0xFF0F0B1A),
+          appBar: AppBar(
+            backgroundColor: const Color(0xFF0F0B1A),
+            elevation: 0,
+            title: const Text(
+              'Daily Spin Wheel',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
               ),
             ),
+            centerTitle: true,
+            leading: IconButton(
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+            ),
+          ),
+          body: provider.isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(color: Color(0xFFFF6A00)),
+                )
+              : FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: SlideTransition(
+                    position: _slideAnimation,
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          // Spin Wheel
+                          _buildSpinWheelSection(provider),
+
+                          const SizedBox(height: 24),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+        );
+      },
     );
   }
 
-  Widget _buildSpinWheelSection() {
+  Widget _buildSpinWheelSection(SpinProvider provider) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -169,9 +147,7 @@ class _SpinPageState extends State<SpinPage> with TickerProviderStateMixin {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      _isPremium
-                          ? 'Spin the wheel daily to earn free tokens! You have $_remainingSpins spin${_remainingSpins == 1 ? '' : 's'} remaining today.'
-                          : 'Spin the wheel daily to earn free tokens! Upgrade to Premium to unlock this feature.',
+                      provider.spinStatusText,
                       style: const TextStyle(
                         color: Color(0xFF8C7BA6),
                         fontSize: 14,
@@ -186,16 +162,16 @@ class _SpinPageState extends State<SpinPage> with TickerProviderStateMixin {
               // Spin Wheel
               Center(
                 child: RedesignedSpinWheel(
-                  isPremium: _isPremium,
-                  canSpin: _remainingSpins > 0 && _isPremium,
-                  onSpinComplete: _onSpinComplete,
+                  isPremium: provider.isPremium,
+                  canSpin: provider.canSpin,
+                  onSpinComplete: () => _onSpinComplete(provider),
                 ),
               ),
             ],
           ),
 
           // Premium Lock Overlay for Non-Premium Users
-          if (!_isPremium)
+          if (!provider.isPremium)
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(

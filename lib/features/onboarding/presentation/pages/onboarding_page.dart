@@ -3,7 +3,10 @@ import '../../../../core/models/onboarding_data.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../widgets/onboarding_content.dart';
 import '../widgets/onboarding_indicator.dart';
-import '../../../home/presentation/pages/main_navigation_page.dart';
+import 'package:spooky_ai/features/home/presentation/pages/main_navigation_page_refactored.dart';
+import '../../../../core/models/paywall_service.dart';
+import 'package:provider/provider.dart';
+import '../../../../core/services/main_navigation_provider.dart';
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
@@ -14,7 +17,6 @@ class OnboardingPage extends StatefulWidget {
 
 class _OnboardingPageState extends State<OnboardingPage> {
   final PageController _pageController = PageController();
-  int _currentPage = 0;
 
   static const List<OnboardingData> _onboardingPages = [
     OnboardingData(
@@ -32,25 +34,25 @@ class _OnboardingPageState extends State<OnboardingPage> {
       icon: '✨',
     ),
     OnboardingData(
-      title: '👻 Ghostface Trend',
+      title: '🧠 Prompt Library',
       description:
-          'Get the viral TikTok-style transformations that everyone is talking about!',
-      imageAsset: 'assets/images/ghost_face_trend.png',
-      icon: '🔥',
+          'Discover curated prompts and save your own favorites. Build better generations faster.',
+      imageAsset: 'assets/images/haunted-house.png',
+      icon: '📚',
     ),
     OnboardingData(
-      title: '💎 Token System',
+      title: '🧪 Halloween Prompt Selector',
       description:
-          'Use tokens to generate images. Start with free tokens and purchase more as needed.',
-      imageAsset: 'assets/images/spider.png',
-      icon: '💎',
+          'Mix & match setting, lighting and effects to craft perfect spooky prompts.',
+      imageAsset: 'assets/images/witch-hat.png',
+      icon: '🧩',
     ),
     OnboardingData(
       title: '🚀 Ready to Start?',
       description:
           'You\'re all set! Let\'s create some spooky masterpieces together.',
-      imageAsset: 'assets/images/witch-hat.png',
-      icon: '🎯',
+      imageAsset: 'assets/images/spider.png',
+      icon: '🚀',
       buttonText: 'Get Started',
       isLastPage: true,
     ),
@@ -63,7 +65,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 
   void _nextPage() {
-    if (_currentPage < _onboardingPages.length - 1) {
+    final current = context.read<MainNavigationProvider>().onboardingPageIndex;
+    if (current < _onboardingPages.length - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -79,15 +82,17 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   Future<void> _completeOnboarding() async {
     await OnboardingService.completeOnboarding();
-    if (mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const MainNavigationPage()),
-      );
-    }
+    if (!mounted) return;
+
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const MainNavigationPageRefactored()),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<MainNavigationProvider>();
     return Scaffold(
       backgroundColor: const Color(0xFF0F0B1A),
       body: SafeArea(
@@ -124,9 +129,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
               child: PageView.builder(
                 controller: _pageController,
                 onPageChanged: (index) {
-                  setState(() {
-                    _currentPage = index;
-                  });
+                  context.read<MainNavigationProvider>().setOnboardingPageIndex(
+                    index,
+                  );
                 },
                 itemCount: _onboardingPages.length,
                 itemBuilder: (context, index) {
@@ -142,7 +147,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 20),
               child: OnboardingIndicator(
-                currentPage: _currentPage,
+                currentPage: provider.onboardingPageIndex,
                 totalPages: _onboardingPages.length,
               ),
             ),

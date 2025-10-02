@@ -60,7 +60,6 @@ class TokenService {
 
   /// Check if user can claim monthly tokens
   static Future<bool> canClaimMonthlyTokens() async {
-    final prefs = await _prefs();
     final lastClaimStr = await _secure.read(key: 'last_monthly_token_claim');
 
     if (lastClaimStr == null) return true;

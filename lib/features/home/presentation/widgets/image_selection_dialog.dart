@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../../core/services/profile_provider.dart';
 
 class ImageSelectionDialog extends StatefulWidget {
   final List<Map<String, dynamic>> images;
@@ -18,8 +20,6 @@ class ImageSelectionDialog extends StatefulWidget {
 }
 
 class _ImageSelectionDialogState extends State<ImageSelectionDialog> {
-  int? _selectedIndex;
-
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -71,15 +71,16 @@ class _ImageSelectionDialogState extends State<ImageSelectionDialog> {
                 ),
                 itemCount: widget.images.length,
                 itemBuilder: (context, index) {
+                  final provider = context.watch<ProfileProvider>();
                   final image = widget.images[index];
                   final imageBytes = image['bytes'] as Uint8List;
-                  final isSelected = _selectedIndex == index;
+                  final isSelected = provider.selectedImageIndex == index;
 
                   return GestureDetector(
                     onTap: () {
-                      setState(() {
-                        _selectedIndex = index;
-                      });
+                      context.read<ProfileProvider>().setSelectedImageIndex(
+                        index,
+                      );
                     },
                     child: Container(
                       decoration: BoxDecoration(
@@ -200,22 +201,24 @@ class _ImageSelectionDialogState extends State<ImageSelectionDialog> {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: ElevatedButton(
-                      onPressed: _selectedIndex != null
-                          ? () => Navigator.of(
-                              context,
-                            ).pop(widget.images[_selectedIndex!])
-                          : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF6A00),
-                        disabledBackgroundColor: const Color(0xFF8C7BA6),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    child: Consumer<ProfileProvider>(
+                      builder: (context, provider, _) => ElevatedButton(
+                        onPressed: provider.selectedImageIndex != null
+                            ? () => Navigator.of(
+                                context,
+                              ).pop(widget.images[provider.selectedImageIndex!])
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF6A00),
+                          disabledBackgroundColor: const Color(0xFF8C7BA6),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
-                      ),
-                      child: const Text(
-                        'Select',
-                        style: TextStyle(color: Colors.white),
+                        child: const Text(
+                          'Select',
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
                     ),
                   ),

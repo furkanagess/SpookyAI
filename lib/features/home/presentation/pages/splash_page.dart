@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'package:spooky_ai/features/home/presentation/pages/main_navigation_page_refactored.dart';
 
-import 'main_navigation_page.dart';
 import '../../../onboarding/presentation/pages/onboarding_page.dart';
 import '../../../../core/models/onboarding_data.dart';
 
@@ -32,10 +32,13 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
 
     final bool isOnboardingCompleted =
         await OnboardingService.isOnboardingCompleted();
+    // Paywall is handled after onboarding completes
+
+    // Paywall now shown after onboarding completion; no longer here
 
     if (isOnboardingCompleted) {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const MainNavigationPage()),
+        MaterialPageRoute(builder: (_) => const MainNavigationPageRefactored()),
       );
     } else {
       Navigator.of(context).pushReplacement(

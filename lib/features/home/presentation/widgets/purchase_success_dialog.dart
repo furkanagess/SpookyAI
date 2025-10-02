@@ -37,17 +37,17 @@ Future<void> showPurchaseSuccessDialog(
             const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                isPremiumSubscription
-                    ? 'You now have access to all premium features including $tokensAdded monthly tokens, daily spin wheel, and exclusive themes!'
-                    : '$tokensAdded tokens have been added to your account. You can start generating new images now.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFFB9A8D0),
-                  fontSize: 13,
-                  height: 1.4,
-                ),
-              ),
+              child: isPremiumSubscription
+                  ? const _PremiumCongrats()
+                  : Text(
+                      '$tokensAdded tokens have been added to your account. You can start generating new images now.',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Color(0xFFB9A8D0),
+                        fontSize: 13,
+                        height: 1.4,
+                      ),
+                    ),
             ),
             const SizedBox(height: 16),
             Padding(
@@ -74,4 +74,67 @@ Future<void> showPurchaseSuccessDialog(
       );
     },
   );
+}
+
+class _PremiumCongrats extends StatelessWidget {
+  const _PremiumCongrats();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        const Text(
+          'You now have access to premium features:',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Color(0xFFB9A8D0), fontSize: 13, height: 1.4),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF211833),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white24.withOpacity(0.1)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              _Benefit(text: '20 tokens every month (auto-added)'),
+              SizedBox(height: 8),
+              _Benefit(text: 'Access to all prompts'),
+              SizedBox(height: 8),
+              _Benefit(text: 'Daily token spin wheel'),
+              SizedBox(height: 8),
+              _Benefit(text: 'Priority AI processing'),
+              SizedBox(height: 8),
+              _Benefit(text: 'Ad-free experience'),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _Benefit extends StatelessWidget {
+  const _Benefit({required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const Icon(Icons.check, color: Color(0xFFFF6A00), size: 16),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(color: Colors.white, fontSize: 13),
+          ),
+        ),
+      ],
+    );
+  }
 }

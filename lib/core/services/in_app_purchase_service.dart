@@ -1,17 +1,16 @@
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:in_app_purchase_android/billing_client_wrappers.dart';
-import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:in_app_purchase_storekit/store_kit_wrappers.dart';
 import 'token_service.dart';
+import 'premium_service.dart';
 
 class InAppPurchaseService {
   InAppPurchaseService._();
 
   static final InAppPurchase _inAppPurchase = InAppPurchase.instance;
   static final List<ProductDetails> _products = [];
-  static final List<PurchaseDetails> _purchases = [];
+  // static final List<PurchaseDetails> _purchases = [];
 
   // App Store Product IDs matching your configuration
   static const Map<String, int> _productTokenMap = {
@@ -33,7 +32,7 @@ class InAppPurchaseService {
   static bool _isAvailable = false;
   static bool _purchasePending = false;
   static String? _queryProductError;
-  static String? _lastPurchaseProductId;
+  // static String? _lastPurchaseProductId;
   static bool _lastPurchaseSuccess = false;
 
   static bool get isAvailable => _isAvailable;
@@ -111,7 +110,6 @@ class InAppPurchaseService {
     }
 
     _purchasePending = true;
-    _lastPurchaseProductId = productId;
     _lastPurchaseSuccess = false;
 
     try {
@@ -167,6 +165,9 @@ class InAppPurchaseService {
         debugPrint(
           'Added $tokens tokens for purchase ${purchaseDetails.productID}',
         );
+      } else if (purchaseDetails.productID == 'spookyai_premium') {
+        // Premium subscription purchase
+        await PremiumService.activatePremiumSubscription();
       }
 
       // Complete the purchase

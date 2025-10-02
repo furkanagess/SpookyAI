@@ -1,8 +1,11 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/services/spin_service.dart';
+import '../../../../core/services/spin_provider.dart';
 import '../../../../core/services/token_service.dart';
 import '../../../../core/services/notification_service.dart';
+import '../../../../core/services/token_provider.dart';
 
 class RedesignedSpinWheel extends StatefulWidget {
   final bool isPremium;
@@ -29,8 +32,7 @@ class _RedesignedSpinWheelState extends State<RedesignedSpinWheel>
   late Animation<double> _pulseAnimation;
   late Animation<double> _glowAnimation;
 
-  bool _isSpinning = false;
-  SpinResult? _lastResult;
+  // UI animations stay local; spin state moves to provider
 
   @override
   void initState() {
@@ -79,11 +81,10 @@ class _RedesignedSpinWheelState extends State<RedesignedSpinWheel>
   }
 
   Future<void> _performSpin() async {
-    if (_isSpinning || !widget.canSpin) return;
+    final provider = context.read<SpinProvider>();
+    if (provider.isSpinning || !widget.canSpin) return;
 
-    setState(() {
-      _isSpinning = true;
-    });
+    provider.setSpinning(true);
 
     // Perform the spin
     final result = await SpinService.performSpin();
@@ -92,6 +93,13 @@ class _RedesignedSpinWheelState extends State<RedesignedSpinWheel>
       // Calculate final angle with multiple rotations
       final finalAngle = result.angle;
 
+      // Immediately grant tokens based on landed segment
+      await TokenService.addTokens(result.reward);
+      try {
+        // Refresh visible token balance if provider is in scope
+        await context.read<TokenProvider>().refreshBalance();
+      } catch (_) {}
+
       // Animate the spin
       _spinController.reset();
       _spinAnimation = Tween<double>(begin: 0, end: finalAngle).animate(
@@ -99,13 +107,8 @@ class _RedesignedSpinWheelState extends State<RedesignedSpinWheel>
       );
 
       _spinController.forward().then((_) {
-        setState(() {
-          _isSpinning = false;
-          _lastResult = result;
-        });
-
-        // Add tokens to user's balance
-        TokenService.addTokens(result.reward);
+        provider.setSpinning(false);
+        provider.setLastResult(result);
 
         // Show enhanced success notification
         _showSpinResultDialog(result);
@@ -114,10 +117,7 @@ class _RedesignedSpinWheelState extends State<RedesignedSpinWheel>
         widget.onSpinComplete?.call();
       });
     } else {
-      setState(() {
-        _isSpinning = false;
-      });
-
+      provider.setSpinning(false);
       NotificationService.error(context, message: result.message);
     }
   }
@@ -321,13 +321,14 @@ class _RedesignedSpinWheelState extends State<RedesignedSpinWheel>
   }
 
   Widget _buildModernSpinButton() {
+    final provider = context.watch<SpinProvider>();
     return AnimatedBuilder(
       animation: _pulseAnimation,
       builder: (context, child) {
         return Transform.scale(
           scale: _pulseAnimation.value,
           child: GestureDetector(
-            onTap: widget.canSpin && !_isSpinning ? _performSpin : null,
+            onTap: widget.canSpin && !provider.isSpinning ? _performSpin : null,
             child: Container(
               width: 90,
               height: 90,
@@ -335,7 +336,7 @@ class _RedesignedSpinWheelState extends State<RedesignedSpinWheel>
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: widget.canSpin && !_isSpinning
+                  colors: widget.canSpin && !provider.isSpinning
                       ? [const Color(0xFFFF6A00), const Color(0xFFFF8A00)]
                       : [const Color(0xFF8C7BA6), const Color(0xFF6A5B8B)],
                 ),
@@ -343,7 +344,7 @@ class _RedesignedSpinWheelState extends State<RedesignedSpinWheel>
                 boxShadow: [
                   BoxShadow(
                     color:
-                        (widget.canSpin && !_isSpinning
+                        (widget.canSpin && !provider.isSpinning
                                 ? const Color(0xFFFF6A00)
                                 : const Color(0xFF8C7BA6))
                             .withOpacity(0.6),
@@ -358,7 +359,7 @@ class _RedesignedSpinWheelState extends State<RedesignedSpinWheel>
                 ],
               ),
               child: Icon(
-                _isSpinning
+                provider.isSpinning
                     ? Icons.autorenew
                     : widget.canSpin
                     ? Icons.play_arrow
@@ -374,35 +375,39 @@ class _RedesignedSpinWheelState extends State<RedesignedSpinWheel>
   }
 
   Widget _buildModernPointer() {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFF6A00), Color(0xFFFF8A00)],
+    return Transform.rotate(
+      angle: math.pi, // Flip the pointer to face inward toward the wheel
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFF6A00), Color(0xFFFF8A00)],
+          ),
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFFF6A00).withOpacity(0.7),
+              blurRadius: 15,
+              offset: const Offset(0, 6),
+            ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.4),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFFF6A00).withOpacity(0.7),
-            blurRadius: 15,
-            offset: const Offset(0, 6),
-          ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.4),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: CustomPaint(
-        size: const Size(40, 40),
-        painter: ModernPointerPainter(),
+        child: CustomPaint(
+          size: const Size(40, 40),
+          painter: ModernPointerPainter(),
+        ),
       ),
     );
   }
 
   Widget _buildSpinStatus() {
+    final provider = context.watch<SpinProvider>();
     return Column(
       children: [
         // Spin availability status
@@ -464,7 +469,7 @@ class _RedesignedSpinWheelState extends State<RedesignedSpinWheel>
           ),
         ),
 
-        if (_lastResult != null) ...[
+        if (provider.lastResult != null) ...[
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -487,7 +492,7 @@ class _RedesignedSpinWheelState extends State<RedesignedSpinWheel>
                 const Icon(Icons.emoji_events, color: Colors.white, size: 24),
                 const SizedBox(width: 12),
                 Text(
-                  'Last spin: ${_lastResult!.reward} tokens!',
+                  'Last spin: ${provider.lastResult!.reward} tokens!',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,

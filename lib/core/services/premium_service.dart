@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'token_service.dart';
 
 class PremiumService {
   PremiumService._();
@@ -35,6 +36,9 @@ class PremiumService {
         await removePremiumStatus();
         return false;
       }
+
+      // Ensure monthly premium tokens are granted once every 30 days
+      await _ensureMonthlyTokens();
 
       return true;
     } catch (e) {
@@ -179,8 +183,29 @@ class PremiumService {
       endDate: DateTime.now().add(const Duration(days: 30)),
     );
 
-    // Grant monthly tokens
+    // Grant monthly tokens on activation
     await _grantMonthlyTokens();
+  }
+
+  /// Testing: Simulate a monthly renewal token grant (does not change dates)
+  static Future<void> simulateMonthlyRenewalGrantForTesting() async {
+    await _grantMonthlyTokens();
+  }
+
+  /// Testing: Expire premium immediately by setting endDate in the past
+  static Future<void> expirePremiumNowForTesting() async {
+    final now = DateTime.now();
+    await setPremiumStatus(
+      isPremium: true,
+      startDate: now.subtract(const Duration(days: 40)),
+      endDate: now.subtract(const Duration(days: 1)),
+    );
+  }
+
+  /// Testing: Refresh notification without state change
+  static Future<void> notifyListenersForTesting() async {
+    final active = await isPremiumUser();
+    _premiumStatusController.add(active);
   }
 
   /// Dispose the stream controller
@@ -191,12 +216,21 @@ class PremiumService {
   /// Grant monthly premium tokens
   static Future<void> _grantMonthlyTokens() async {
     try {
-      // Import TokenService here to avoid circular dependency
-      // This will be called when premium is activated
-      // await TokenService.grantMonthlyPremiumTokens();
-      // await TokenService.markMonthlyTokensClaimed();
+      await TokenService.grantMonthlyPremiumTokens();
+      await TokenService.markMonthlyTokensClaimed();
     } catch (e) {
       // Handle error silently
+    }
+  }
+
+  static Future<void> _ensureMonthlyTokens() async {
+    try {
+      final canClaim = await TokenService.canClaimMonthlyTokens();
+      if (canClaim) {
+        await _grantMonthlyTokens();
+      }
+    } catch (e) {
+      // no-op
     }
   }
 }

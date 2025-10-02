@@ -4,33 +4,34 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/services/saved_images_provider.dart';
 import '../../../../core/services/token_provider.dart';
+import '../../../../core/services/main_navigation_provider.dart';
 import '../../../../core/widgets/token_display_widget.dart';
-import '../../../../core/services/premium_service.dart';
 
 import '../../../../core/config/api_keys.dart';
 import '../../../../core/services/stability_service.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/theme/app_metrics.dart';
-// import '../../../../core/utils/prompt_builder.dart'; // COMMENTED OUT: Ghostface module disabled
 import 'purchase_page.dart';
 import 'photos_page.dart';
 import 'prompts_page.dart';
 import 'profile_page.dart';
-import 'api_key_page.dart';
 import '../../domain/generation_mode.dart';
 import '../widgets/prompt_input_widget.dart';
 import '../widgets/image_upload_widget.dart';
 import '../widgets/generation_progress_dialog.dart';
-// import 'package:flutter/services.dart' show rootBundle; // COMMENTED OUT: Ghostface module disabled
+import '../widgets/paywall_dialog.dart';
+import '../../../../core/models/paywall_service.dart';
 
-class MainNavigationPage extends StatefulWidget {
-  const MainNavigationPage({super.key});
+class MainNavigationPageRefactored extends StatefulWidget {
+  const MainNavigationPageRefactored({super.key});
 
   @override
-  State<MainNavigationPage> createState() => _MainNavigationPageState();
+  State<MainNavigationPageRefactored> createState() =>
+      _MainNavigationPageRefactoredState();
 }
 
-class _MainNavigationPageState extends State<MainNavigationPage>
+class _MainNavigationPageRefactoredState
+    extends State<MainNavigationPageRefactored>
     with TickerProviderStateMixin {
   late final StabilityService _stability;
   late AnimationController _fadeController;
@@ -42,10 +43,6 @@ class _MainNavigationPageState extends State<MainNavigationPage>
   final PageController _pageController = PageController();
   late Animation<Offset> _slideAnimation;
 
-  int _currentIndex = 0;
-  bool _isPremium = false;
-  StreamSubscription<bool>? _premiumStatusSubscription;
-
   // Page keys for better performance
   final List<GlobalKey<State<StatefulWidget>>> _pageKeys = [
     GlobalKey<State<StatefulWidget>>(),
@@ -53,14 +50,6 @@ class _MainNavigationPageState extends State<MainNavigationPage>
     GlobalKey<State<StatefulWidget>>(),
     GlobalKey<State<StatefulWidget>>(),
   ];
-
-  // Generation data
-  String _prompt = '';
-  Uint8List? _uploadedImage;
-  bool _isGenerating = false;
-  final List<Uint8List> _generatedImages = <Uint8List>[];
-  GenerationMode _activeMode = GenerationMode.image;
-  // bool _useGhostfaceTrend = false; // COMMENTED OUT: Ghostface module disabled
 
   @override
   void initState() {
@@ -95,8 +84,27 @@ class _MainNavigationPageState extends State<MainNavigationPage>
         );
 
     _fadeController.forward();
-    _loadPremiumStatus();
-    _listenToPremiumStatusChanges();
+
+    // Show one-time paywall after first main screen frame
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      // Ensure premium status is up-to-date so the premium banner can appear
+      try {
+        await context.read<MainNavigationProvider>().refreshPremiumStatus();
+      } catch (_) {}
+      final shown = await PaywallService.isPaywallShown();
+      if (!shown) {
+        await showDialog(
+          context: context,
+          barrierDismissible: true,
+          builder: (ctx) => PaywallDialog(
+            onBuy: () => Navigator.of(ctx).pop(),
+            onRestore: () => Navigator.of(ctx).pop(),
+          ),
+        );
+        await PaywallService.markPaywallShown();
+      }
+    });
   }
 
   @override
@@ -104,89 +112,15 @@ class _MainNavigationPageState extends State<MainNavigationPage>
     _fadeController.dispose();
     _premiumBannerController.dispose();
     _pageController.dispose();
-    _premiumStatusSubscription?.cancel();
     super.dispose();
   }
 
   bool get _hasStabilityKey => ApiKeys.hasStabilityKey;
 
-  Future<void> _loadPremiumStatus() async {
-    try {
-      final isPremium = await PremiumService.isPremiumUser();
-      if (mounted) {
-        setState(() {
-          _isPremium = isPremium;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isPremium = false;
-        });
-      }
-    }
-  }
-
-  void _listenToPremiumStatusChanges() {
-    _premiumStatusSubscription = PremiumService.premiumStatusStream.listen(
-      (isPremium) {
-        if (mounted) {
-          setState(() {
-            _isPremium = isPremium;
-          });
-
-          // Start banner animation when premium status changes to true
-          if (isPremium) {
-            _premiumBannerController.repeat(reverse: true);
-          } else {
-            _premiumBannerController.stop();
-            _premiumBannerController.reset();
-          }
-        }
-      },
-      onError: (error) {
-        print('MainNavigationPage: Error listening to premium status: $error');
-      },
-    );
-  }
-
-  void _onPromptChanged(String prompt) {
-    setState(() {
-      _prompt = prompt;
-    });
-  }
-
-  void _onImageSelected(Uint8List imageBytes) {
-    setState(() {
-      _uploadedImage = imageBytes;
-      // Pre-fill prompt to instruct using the uploaded image
-      if (_activeMode == GenerationMode.image && _prompt.trim().isEmpty) {
-        _prompt =
-            'use this image: detailed transformation to spooky cinematic style';
-      }
-    });
-  }
-
-  void _onImageRemoved() {
-    setState(() {
-      _uploadedImage = null;
-      // Keep user's prompt but avoid forcing the helper text
-    });
-  }
-
-  void _switchMode(GenerationMode newMode) {
-    if (_activeMode == newMode) return;
-
-    setState(() {
-      _activeMode = newMode;
-      if (_activeMode == GenerationMode.text) {
-        _uploadedImage = null;
-      }
-    });
-  }
-
   Future<void> _showGenerationConfirmationDialog() async {
-    if (_prompt.isEmpty) {
+    final provider = context.read<MainNavigationProvider>();
+
+    if (provider.prompt.isEmpty) {
       NotificationService.warning(
         context,
         message: 'Please enter a prompt to generate an image.',
@@ -296,7 +230,7 @@ class _MainNavigationPageState extends State<MainNavigationPage>
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        _prompt,
+                        provider.prompt,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 14,
@@ -367,20 +301,6 @@ class _MainNavigationPageState extends State<MainNavigationPage>
   }
 
   Future<void> _generateImage() async {
-    if (!_hasStabilityKey) {
-      NotificationService.error(
-        context,
-        message: NotificationService.apiKeyRequired,
-        actionLabel: 'Configure',
-        onAction: () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (_) => const ApiKeyPage()));
-        },
-      );
-      return;
-    }
-
     // Consume 1 token upfront
     final tokenProvider = context.read<TokenProvider>();
     final bool hasToken = await tokenProvider.consumeOne();
@@ -399,61 +319,31 @@ class _MainNavigationPageState extends State<MainNavigationPage>
       return;
     }
 
-    setState(() {
-      _isGenerating = true;
-    });
+    final provider = context.read<MainNavigationProvider>();
+    provider.setGenerating(true);
 
     final progress = showGenerationProgressDialog(context);
 
     try {
       Uint8List resultBytes;
 
-      // COMMENTED OUT: Ghostface Trend functionality disabled
-      // if (_useGhostfaceTrend && _uploadedImage != null) {
-      //   // Ghostface Trend with user's uploaded image (image-to-image)
-      //   final String prompt = PromptBuilder.buildGhostfaceTrendImagePrompt(
-      //     _prompt,
-      //   );
-      //   resultBytes = await _stability.generateImageFromImage(
-      //     prompt: prompt,
-      //     imageBytes: _uploadedImage!,
-      //     // High identity preservation for user face
-      //     imageStrength: 0.85,
-      //     cfgScale: 7,
-      //   );
-      // } else if (_useGhostfaceTrend && _uploadedImage == null) {
-      //   // Ghostface Trend should also run as image-to-image using preset base image
-      //   final String prompt = PromptBuilder.buildGhostfaceTrendImagePrompt(
-      //     _prompt,
-      //   );
-      //   final Uint8List base = (await rootBundle.load(
-      //     'assets/images/ghost_face_trend.png',
-      //   )).buffer.asUint8List();
-      //   resultBytes = await _stability.generateImageFromImage(
-      //     prompt: prompt,
-      //     imageBytes: base,
-      //     // Lower base image influence so background Ghostface can be composed
-      //     imageStrength: 0.35,
-      //     cfgScale: 9,
-      //   );
-      // } else
-      if (_uploadedImage != null) {
+      if (provider.uploadedImage != null) {
         // Standard image-to-image
         resultBytes = await _stability.generateImageFromImage(
-          prompt: _prompt,
-          imageBytes: _uploadedImage!,
+          prompt: provider.prompt,
+          imageBytes: provider.uploadedImage!,
           imageStrength: 0.75,
           cfgScale: 7,
         );
       } else {
         // Standard text-to-image
-        resultBytes = await _stability.generateImageBytes(prompt: _prompt);
+        resultBytes = await _stability.generateImageBytes(
+          prompt: provider.prompt,
+        );
       }
 
       if (!mounted) return;
-      setState(() {
-        _generatedImages.insert(0, resultBytes);
-      });
+      provider.addGeneratedImage(resultBytes);
 
       try {
         progress.setProgress(1.0);
@@ -481,14 +371,14 @@ class _MainNavigationPageState extends State<MainNavigationPage>
       );
     } finally {
       if (mounted) {
-        setState(() {
-          _isGenerating = false;
-        });
+        provider.setGenerating(false);
       }
     }
   }
 
   Future<void> _showResultDialog(Uint8List imageBytes) async {
+    final provider = context.read<MainNavigationProvider>();
+
     return showDialog<void>(
       context: context,
       builder: (context) {
@@ -512,7 +402,7 @@ class _MainNavigationPageState extends State<MainNavigationPage>
                 child: Column(
                   children: [
                     // Prompt info
-                    if (_prompt.isNotEmpty)
+                    if (provider.prompt.isNotEmpty)
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
@@ -537,7 +427,7 @@ class _MainNavigationPageState extends State<MainNavigationPage>
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              _prompt,
+                              provider.prompt,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 14,
@@ -584,12 +474,16 @@ class _MainNavigationPageState extends State<MainNavigationPage>
   }
 
   Future<void> _saveImage(Uint8List imageBytes) async {
+    final provider = context.read<MainNavigationProvider>();
+
     try {
       await context.read<SavedImagesProvider>().addSavedImage(
         imageBytes: imageBytes,
-        prompt: _prompt,
-        isImageToImage: _activeMode == GenerationMode.image,
-        originalImagePath: _uploadedImage != null ? 'uploaded_image' : null,
+        prompt: provider.prompt,
+        isImageToImage: provider.activeMode == GenerationMode.image,
+        originalImagePath: provider.uploadedImage != null
+            ? 'uploaded_image'
+            : null,
       );
 
       if (mounted) {
@@ -610,91 +504,106 @@ class _MainNavigationPageState extends State<MainNavigationPage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: [
-          _buildGenerateTab(),
-          PhotosPage(
-            key: _pageKeys[1],
-            onNavigateToGenerate: () {
-              setState(() {
-                _currentIndex = 0;
-              });
-              _pageController.animateToPage(
-                0,
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-              );
-            },
-          ),
-          PromptsPage(
-            key: _pageKeys[2],
-            onPromptSelected: (prompt) {
-              setState(() {
-                _prompt = prompt;
-                _currentIndex = 0; // Navigate to generate tab
-              });
-              _pageController.animateToPage(
-                0,
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-              );
-            },
-          ),
-          ProfilePage(key: _pageKeys[3]),
-        ],
-      ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.transparent,
-              const Color(0xFF0F0B1A).withOpacity(0.8),
-              const Color(0xFF0F0B1A).withOpacity(0.95),
+    return Consumer<MainNavigationProvider>(
+      builder: (context, provider, child) {
+        // Start/stop premium banner animation based on premium status
+        if (provider.isPremium) {
+          if (!_premiumBannerController.isAnimating) {
+            _premiumBannerController.repeat(period: const Duration(seconds: 3));
+          }
+        } else {
+          if (_premiumBannerController.isAnimating) {
+            _premiumBannerController.stop();
+            _premiumBannerController.reset();
+          }
+        }
+        return Scaffold(
+          body: IndexedStack(
+            index: provider.currentIndex,
+            children: [
+              _buildGenerateTab(provider),
+              PhotosPage(
+                key: _pageKeys[1],
+                onNavigateToGenerate: () {
+                  provider.setCurrentIndex(0);
+                  _pageController.animateToPage(
+                    0,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                },
+              ),
+              PromptsPage(
+                key: _pageKeys[2],
+                onPromptSelected: (prompt) {
+                  provider.updatePrompt(prompt);
+                  provider.setCurrentIndex(0); // Navigate to generate tab
+                  _pageController.animateToPage(
+                    0,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                },
+              ),
+              ProfilePage(key: _pageKeys[3]),
             ],
           ),
-        ),
-        child: Row(
-          children: [
-            // Generate Button
-            Expanded(
-              child: _buildNavButton(
-                index: 0,
-                icon: Icons.auto_fix_high,
-                label: 'Generate',
+          bottomNavigationBar: Container(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  const Color(0xFF0F0B1A).withOpacity(0.8),
+                  const Color(0xFF0F0B1A).withOpacity(0.95),
+                ],
               ),
             ),
-            // Photos Button
-            Expanded(
-              child: _buildNavButton(
-                index: 1,
-                icon: Icons.photo_library_outlined,
-                label: 'Photos',
-              ),
+            child: Row(
+              children: [
+                // Generate Button
+                Expanded(
+                  child: _buildNavButton(
+                    index: 0,
+                    icon: Icons.auto_fix_high,
+                    label: 'Generate',
+                    provider: provider,
+                  ),
+                ),
+                // Photos Button
+                Expanded(
+                  child: _buildNavButton(
+                    index: 1,
+                    icon: Icons.photo_library_outlined,
+                    label: 'Photos',
+                    provider: provider,
+                  ),
+                ),
+                // Prompts Button
+                Expanded(
+                  child: _buildNavButton(
+                    index: 2,
+                    icon: Icons.lightbulb_outline,
+                    label: 'Prompts',
+                    provider: provider,
+                  ),
+                ),
+                // Profile Button
+                Expanded(
+                  child: _buildNavButton(
+                    index: 3,
+                    icon: Icons.person_outline,
+                    label: 'Profile',
+                    provider: provider,
+                  ),
+                ),
+              ],
             ),
-            // Prompts Button
-            Expanded(
-              child: _buildNavButton(
-                index: 2,
-                icon: Icons.lightbulb_outline,
-                label: 'Prompts',
-              ),
-            ),
-            // Profile Button
-            Expanded(
-              child: _buildNavButton(
-                index: 3,
-                icon: Icons.person_outline,
-                label: 'Profile',
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -782,7 +691,7 @@ class _MainNavigationPageState extends State<MainNavigationPage>
     );
   }
 
-  Widget _buildGenerateTab() {
+  Widget _buildGenerateTab(MainNavigationProvider provider) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
@@ -830,7 +739,7 @@ class _MainNavigationPageState extends State<MainNavigationPage>
           ),
         ],
         bottom: PreferredSize(
-          preferredSize: Size.fromHeight(_isPremium ? 40 : 0),
+          preferredSize: Size.fromHeight(provider.isPremium ? 40 : 0),
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 300),
             transitionBuilder: (Widget child, Animation<double> animation) {
@@ -848,7 +757,9 @@ class _MainNavigationPageState extends State<MainNavigationPage>
                 child: FadeTransition(opacity: animation, child: child),
               );
             },
-            child: _isPremium ? _buildPremiumBanner() : const SizedBox.shrink(),
+            child: provider.isPremium
+                ? _buildPremiumBanner()
+                : const SizedBox.shrink(),
           ),
         ),
       ),
@@ -943,7 +854,9 @@ class _MainNavigationPageState extends State<MainNavigationPage>
                                   child: AnimatedContainer(
                                     duration: const Duration(milliseconds: 300),
                                     curve: Curves.easeInOut,
-                                    height: _activeMode == GenerationMode.image
+                                    height:
+                                        provider.activeMode ==
+                                            GenerationMode.image
                                         ? 140
                                         : 0,
                                     child: AnimatedOpacity(
@@ -952,19 +865,29 @@ class _MainNavigationPageState extends State<MainNavigationPage>
                                       ),
                                       curve: Curves.easeInOut,
                                       opacity:
-                                          _activeMode == GenerationMode.image
+                                          provider.activeMode ==
+                                              GenerationMode.image
                                           ? 1.0
                                           : 0.0,
-                                      child: _activeMode == GenerationMode.image
+                                      child:
+                                          provider.activeMode ==
+                                              GenerationMode.image
                                           ? Container(
                                               constraints: const BoxConstraints(
                                                 maxHeight: 120,
                                               ),
                                               child: ImageUploadWidget(
-                                                onImageSelected:
-                                                    _onImageSelected,
-                                                onImageRemoved: _onImageRemoved,
-                                                uploadedImage: _uploadedImage,
+                                                onImageSelected: (imageBytes) {
+                                                  provider.setUploadedImage(
+                                                    imageBytes,
+                                                  );
+                                                },
+                                                onImageRemoved: () {
+                                                  provider
+                                                      .removeUploadedImage();
+                                                },
+                                                uploadedImage:
+                                                    provider.uploadedImage,
                                               ),
                                             )
                                           : const SizedBox.shrink(),
@@ -974,27 +897,33 @@ class _MainNavigationPageState extends State<MainNavigationPage>
 
                                 // Dynamic spacing based on mode
                                 SizedBox(
-                                  height: _activeMode == GenerationMode.image
+                                  height:
+                                      provider.activeMode ==
+                                          GenerationMode.image
                                       ? 16
                                       : 8,
                                 ),
                                 // Prompt input
                                 PromptInputWidget(
-                                  onPromptChanged: _onPromptChanged,
-                                  hintText: _activeMode == GenerationMode.text
+                                  onPromptChanged: (prompt) {
+                                    provider.updatePrompt(prompt);
+                                  },
+                                  hintText:
+                                      provider.activeMode == GenerationMode.text
                                       ? 'Describe your Halloween scene...'
                                       : 'Describe how to transform into Halloween style...',
                                   initialText:
-                                      _activeMode == GenerationMode.image
-                                      ? (_uploadedImage != null
+                                      provider.activeMode ==
+                                          GenerationMode.image
+                                      ? (provider.uploadedImage != null
                                             ? 'use this image: detailed transformation to spooky cinematic style'
-                                            : _prompt)
-                                      : _prompt,
+                                            : provider.prompt)
+                                      : provider.prompt,
                                 ),
                                 const SizedBox(height: 16),
 
                                 // Fixed Mode selector row
-                                _buildCompactModeSelector(),
+                                _buildCompactModeSelector(provider),
                               ],
                             ),
                           ),
@@ -1023,10 +952,11 @@ class _MainNavigationPageState extends State<MainNavigationPage>
                 child: SizedBox(
                   width: double.infinity,
                   child: FilledButton.icon(
-                    onPressed: !_isGenerating && _prompt.isNotEmpty
+                    onPressed:
+                        !provider.isGenerating && provider.prompt.isNotEmpty
                         ? _showGenerationConfirmationDialog
                         : null,
-                    icon: _isGenerating
+                    icon: provider.isGenerating
                         ? const SizedBox(
                             width: 20,
                             height: 20,
@@ -1034,10 +964,13 @@ class _MainNavigationPageState extends State<MainNavigationPage>
                           )
                         : const Icon(Icons.auto_fix_high),
                     label: Text(
-                      _isGenerating ? 'Generating...' : 'Generate Image',
+                      provider.isGenerating
+                          ? 'Generating...'
+                          : 'Generate Image',
                     ),
                     style: FilledButton.styleFrom(
-                      backgroundColor: !_isGenerating && _prompt.isNotEmpty
+                      backgroundColor:
+                          !provider.isGenerating && provider.prompt.isNotEmpty
                           ? const Color(0xFFFF6A00)
                           : const Color(0xFF4B5563),
                       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -1052,7 +985,7 @@ class _MainNavigationPageState extends State<MainNavigationPage>
     );
   }
 
-  Widget _buildCompactModeSelector() {
+  Widget _buildCompactModeSelector(MainNavigationProvider provider) {
     return Container(
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
@@ -1080,6 +1013,7 @@ class _MainNavigationPageState extends State<MainNavigationPage>
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
+              provider: provider,
             ),
           ),
           const SizedBox(width: 6),
@@ -1094,6 +1028,7 @@ class _MainNavigationPageState extends State<MainNavigationPage>
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
+              provider: provider,
             ),
           ),
         ],
@@ -1106,13 +1041,14 @@ class _MainNavigationPageState extends State<MainNavigationPage>
     required IconData icon,
     required String title,
     required Gradient gradient,
+    required MainNavigationProvider provider,
   }) {
-    final isSelected = _activeMode == mode;
+    final isSelected = provider.activeMode == mode;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => _switchMode(mode),
+        onTap: () => provider.switchMode(mode),
         borderRadius: BorderRadius.circular(20),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
@@ -1181,14 +1117,13 @@ class _MainNavigationPageState extends State<MainNavigationPage>
     required int index,
     required IconData icon,
     required String label,
+    required MainNavigationProvider provider,
   }) {
-    final isSelected = _currentIndex == index;
+    final isSelected = provider.currentIndex == index;
 
     return GestureDetector(
       onTap: () {
-        setState(() {
-          _currentIndex = index;
-        });
+        provider.setCurrentIndex(index);
       },
       child: Container(
         height: 48,

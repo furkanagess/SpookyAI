@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../core/services/daily_login_service.dart';
+import 'package:provider/provider.dart';
+import '../../../../core/services/stats_provider.dart';
 import '../../../../core/theme/app_metrics.dart';
 
 class StatsPage extends StatefulWidget {
@@ -10,12 +11,6 @@ class StatsPage extends StatefulWidget {
 }
 
 class _StatsPageState extends State<StatsPage> with TickerProviderStateMixin {
-  bool _isLoading = true;
-  int _currentStreak = 0;
-  int _longestStreak = 0;
-  int _totalLogins = 0;
-  List<DateTime> _loginHistory = [];
-
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -24,7 +19,10 @@ class _StatsPageState extends State<StatsPage> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _initializeAnimations();
-    _loadStatsData();
+    // Initialize provider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<StatsProvider>().initialize();
+    });
   }
 
   void _initializeAnimations() {
@@ -51,33 +49,7 @@ class _StatsPageState extends State<StatsPage> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  Future<void> _loadStatsData() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      // Load daily login data
-      final currentStreak = await DailyLoginService.getCurrentStreak();
-      final longestStreak = await DailyLoginService.getLongestStreak();
-      final totalLogins = await DailyLoginService.getTotalLogins();
-      final loginHistory = await DailyLoginService.getLoginHistory();
-
-      setState(() {
-        _currentStreak = currentStreak;
-        _longestStreak = longestStreak;
-        _totalLogins = totalLogins;
-        _loginHistory = loginHistory;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  Widget _buildStatsSection() {
+  Widget _buildStatsSection(StatsProvider provider) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -124,7 +96,7 @@ class _StatsPageState extends State<StatsPage> with TickerProviderStateMixin {
                 child: _buildCompactStatCard(
                   icon: Icons.local_fire_department,
                   title: 'Current Streak',
-                  value: '$_currentStreak',
+                  value: '${provider.currentStreak}',
                   color: const Color(0xFFFF6A00),
                 ),
               ),
@@ -133,7 +105,7 @@ class _StatsPageState extends State<StatsPage> with TickerProviderStateMixin {
                 child: _buildCompactStatCard(
                   icon: Icons.emoji_events,
                   title: 'Best Streak',
-                  value: '$_longestStreak',
+                  value: '${provider.longestStreak}',
                   color: const Color(0xFFFFD700),
                 ),
               ),
@@ -146,7 +118,7 @@ class _StatsPageState extends State<StatsPage> with TickerProviderStateMixin {
                 child: _buildCompactStatCard(
                   icon: Icons.login,
                   title: 'Total Logins',
-                  value: '$_totalLogins',
+                  value: '${provider.totalLogins}',
                   color: const Color(0xFF4CAF50),
                 ),
               ),
@@ -155,7 +127,7 @@ class _StatsPageState extends State<StatsPage> with TickerProviderStateMixin {
                 child: _buildCompactStatCard(
                   icon: Icons.calendar_month,
                   title: 'This Month',
-                  value: '${_getThisMonthLogins()}',
+                  value: '${provider.getThisMonthLogins()}',
                   color: const Color(0xFF2196F3),
                 ),
               ),
@@ -166,7 +138,7 @@ class _StatsPageState extends State<StatsPage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildDailyLoginSection() {
+  Widget _buildDailyLoginSection(StatsProvider provider) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -210,7 +182,7 @@ class _StatsPageState extends State<StatsPage> with TickerProviderStateMixin {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  '${_getActiveDays()} days',
+                  '${provider.getActiveDays()} days',
                   style: const TextStyle(
                     color: Color(0xFF4CAF50),
                     fontSize: 10,
@@ -221,7 +193,7 @@ class _StatsPageState extends State<StatsPage> with TickerProviderStateMixin {
             ],
           ),
           const SizedBox(height: 12),
-          _buildCompactLoginCalendar(),
+          _buildCompactLoginCalendar(provider),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -253,18 +225,6 @@ class _StatsPageState extends State<StatsPage> with TickerProviderStateMixin {
         ),
       ],
     );
-  }
-
-  int _getActiveDays() {
-    final now = DateTime.now();
-    return _loginHistory
-        .where(
-          (date) =>
-              date.year == now.year &&
-              date.month == now.month &&
-              date.isAfter(now.subtract(const Duration(days: 30))),
-        )
-        .length;
   }
 
   Widget _buildCompactStatCard({
@@ -316,19 +276,14 @@ class _StatsPageState extends State<StatsPage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildCompactLoginCalendar() {
+  Widget _buildCompactLoginCalendar(StatsProvider provider) {
     final now = DateTime.now();
     final calendarDays = <Widget>[];
 
     // Show last 30 days in a 6x5 grid - more compact
     for (int i = 29; i >= 0; i--) {
       final date = now.subtract(Duration(days: i));
-      final isLoggedIn = _loginHistory.any(
-        (loginDate) =>
-            loginDate.year == date.year &&
-            loginDate.month == date.month &&
-            loginDate.day == date.day,
-      );
+      final isLoggedIn = provider.isLoggedInOnDate(date);
 
       calendarDays.add(
         Container(
@@ -371,102 +326,103 @@ class _StatsPageState extends State<StatsPage> with TickerProviderStateMixin {
     );
   }
 
-  int _getThisMonthLogins() {
-    final now = DateTime.now();
-    return _loginHistory
-        .where((date) => date.year == now.year && date.month == now.month)
-        .length;
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F0B1A),
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFFF6A00), Color(0xFF9C27B0)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(Icons.analytics, color: Colors.white, size: 18),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'Statistics',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.5,
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: const Color(0xFF0F0B1A),
-        elevation: 0,
-        toolbarHeight: AppMetrics.toolbarHeight,
-        actions: const [],
-      ),
-      body: Stack(
-        children: [
-          // Background decorations
-          Positioned(
-            bottom: 40,
-            left: 20,
-            child: Opacity(
-              opacity: 0.06,
-              child: Text('📊', style: TextStyle(fontSize: 80)),
-            ),
-          ),
-          Positioned(
-            top: 60,
-            right: 20,
-            child: Opacity(
-              opacity: 0.04,
-              child: Text('📈', style: TextStyle(fontSize: 60)),
-            ),
-          ),
-          Positioned(
-            top: 120,
-            left: 40,
-            child: Opacity(
-              opacity: 0.04,
-              child: Text('🎯', style: TextStyle(fontSize: 50)),
-            ),
-          ),
-
-          // Main content
-          FadeTransition(
-            opacity: _fadeAnimation,
-            child: SlideTransition(
-              position: _slideAnimation,
-              child: _isLoading
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: Color(0xFF4CAF50),
-                      ),
-                    )
-                  : Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        children: [
-                          _buildStatsSection(),
-                          const SizedBox(height: 12),
-                          _buildDailyLoginSection(),
-                        ],
-                      ),
+    return Consumer<StatsProvider>(
+      builder: (context, provider, child) {
+        return Scaffold(
+          backgroundColor: const Color(0xFF0F0B1A),
+          appBar: AppBar(
+            title: Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFF6A00), Color(0xFF9C27B0)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.analytics,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Statistics',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ],
             ),
+            backgroundColor: const Color(0xFF0F0B1A),
+            elevation: 0,
+            toolbarHeight: AppMetrics.toolbarHeight,
+            actions: const [],
           ),
-        ],
-      ),
+          body: Stack(
+            children: [
+              // Background decorations
+              Positioned(
+                bottom: 40,
+                left: 20,
+                child: Opacity(
+                  opacity: 0.06,
+                  child: Text('📊', style: TextStyle(fontSize: 80)),
+                ),
+              ),
+              Positioned(
+                top: 60,
+                right: 20,
+                child: Opacity(
+                  opacity: 0.04,
+                  child: Text('📈', style: TextStyle(fontSize: 60)),
+                ),
+              ),
+              Positioned(
+                top: 120,
+                left: 40,
+                child: Opacity(
+                  opacity: 0.04,
+                  child: Text('🎯', style: TextStyle(fontSize: 50)),
+                ),
+              ),
+
+              // Main content
+              FadeTransition(
+                opacity: _fadeAnimation,
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: provider.isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF4CAF50),
+                          ),
+                        )
+                      : Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              _buildStatsSection(provider),
+                              const SizedBox(height: 12),
+                              _buildDailyLoginSection(provider),
+                            ],
+                          ),
+                        ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

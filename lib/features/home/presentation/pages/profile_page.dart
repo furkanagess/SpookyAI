@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/services/avatar_service.dart';
@@ -7,9 +6,12 @@ import '../../../../core/services/notification_service.dart';
 import '../../../../core/services/token_provider.dart';
 import '../../../../core/widgets/token_display_widget.dart';
 import '../../../../core/services/saved_images_provider.dart';
-import '../../../../core/services/premium_service.dart';
+import '../../../../core/services/profile_provider.dart';
 import '../../../../core/services/daily_login_service.dart';
-import '../../../../core/services/username_service.dart';
+import '../../../../core/services/premium_service.dart';
+import '../widgets/purchase_success_dialog.dart';
+import '../../../../core/services/token_service.dart';
+import '../../../../core/services/main_navigation_provider.dart';
 import '../../../../core/theme/app_metrics.dart';
 import '../widgets/image_selection_dialog.dart';
 import 'spin_page.dart';
@@ -25,13 +27,6 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage>
     with TickerProviderStateMixin {
-  Uint8List? _currentAvatar;
-  bool _isLoading = true;
-  bool _isPremium = false;
-  bool _canClaimDailyReward = false;
-  String _username = 'Spooky Creator';
-  StreamSubscription<bool>? _premiumStatusSubscription;
-
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -40,8 +35,10 @@ class _ProfilePageState extends State<ProfilePage>
   void initState() {
     super.initState();
     _initializeAnimations();
-    _loadProfileData();
-    _listenToPremiumStatusChanges();
+    // Load profile data through provider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ProfileProvider>().loadProfileData();
+    });
   }
 
   void _initializeAnimations() {
@@ -65,58 +62,7 @@ class _ProfilePageState extends State<ProfilePage>
   @override
   void dispose() {
     _fadeController.dispose();
-    _premiumStatusSubscription?.cancel();
     super.dispose();
-  }
-
-  Future<void> _loadProfileData() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      // Load avatar
-      final avatarBytes = await AvatarService.getCurrentAvatarBytes();
-
-      // Check premium status
-      final isPremium = await PremiumService.isPremiumUser();
-
-      // Load daily login data
-      final canClaimReward = await DailyLoginService.canClaimDailyReward();
-
-      // Load username
-      final username = await UsernameService.getUsername();
-
-      setState(() {
-        _currentAvatar = avatarBytes;
-        _isPremium = isPremium;
-        _canClaimDailyReward = canClaimReward;
-        _username = username;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  void _listenToPremiumStatusChanges() {
-    _premiumStatusSubscription = PremiumService.premiumStatusStream.listen(
-      (isPremium) {
-        if (mounted) {
-          setState(() {
-            _isPremium = isPremium;
-          });
-          print(
-            'ProfilePage: Premium status changed via stream - isPremium: $isPremium',
-          );
-        }
-      },
-      onError: (error) {
-        print('ProfilePage: Error listening to premium status: $error');
-      },
-    );
   }
 
   Future<void> _showAvatarSelectionDialog() async {
@@ -156,48 +102,13 @@ class _ProfilePageState extends State<ProfilePage>
     );
 
     if (selectedImage != null) {
-      await _setAvatarFromImage(selectedImage);
-    }
-  }
-
-  Future<void> _setAvatarFromImage(Map<String, dynamic> imageData) async {
-    try {
-      setState(() {
-        _isLoading = true;
-      });
-
-      final imageId = imageData['id'] as String;
-      final imageBytes = imageData['bytes'] as Uint8List;
-
-      final success = await AvatarService.setAvatarFromImage(
-        imageBytes,
-        imageId,
-      );
-
-      if (success) {
-        setState(() {
-          _currentAvatar = imageBytes;
-        });
-
+      await context.read<ProfileProvider>().setAvatarFromImage(selectedImage);
+      if (mounted) {
         NotificationService.success(
           context,
           message: 'Avatar updated successfully!',
         );
-      } else {
-        NotificationService.error(
-          context,
-          message: 'Failed to update avatar. Please try again.',
-        );
       }
-    } catch (e) {
-      NotificationService.error(
-        context,
-        message: 'Failed to update avatar. Please try again.',
-      );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
     }
   }
 
@@ -280,14 +191,13 @@ class _ProfilePageState extends State<ProfilePage>
     );
 
     if (selectedAvatar != null) {
-      await AvatarService.setDefaultAvatar(selectedAvatar['name']);
-      await AvatarService.removeAvatar(); // Remove custom avatar
-
-      setState(() {
-        _currentAvatar = null;
-      });
-
-      NotificationService.success(context, message: 'Default avatar selected!');
+      await context.read<ProfileProvider>().setDefaultAvatar(selectedAvatar);
+      if (mounted) {
+        NotificationService.success(
+          context,
+          message: 'Default avatar selected!',
+        );
+      }
     }
   }
 
@@ -321,27 +231,17 @@ class _ProfilePageState extends State<ProfilePage>
     );
 
     if (confirmed == true) {
-      final success = await AvatarService.removeAvatar();
-
-      if (success) {
-        setState(() {
-          _currentAvatar = null;
-        });
-
+      await context.read<ProfileProvider>().removeAvatar();
+      if (mounted) {
         NotificationService.success(
           context,
           message: 'Avatar removed successfully!',
-        );
-      } else {
-        NotificationService.error(
-          context,
-          message: 'Failed to remove avatar. Please try again.',
         );
       }
     }
   }
 
-  Widget _buildProfileHeader() {
+  Widget _buildProfileHeader(ProfileProvider provider) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -387,8 +287,8 @@ class _ProfilePageState extends State<ProfilePage>
                   ],
                 ),
                 child: ClipOval(
-                  child: _currentAvatar != null
-                      ? Image.memory(_currentAvatar!, fit: BoxFit.cover)
+                  child: provider.currentAvatar != null
+                      ? Image.memory(provider.currentAvatar!, fit: BoxFit.cover)
                       : FutureBuilder<String>(
                           future: AvatarService.getDefaultAvatar(),
                           builder: (context, snapshot) {
@@ -413,7 +313,7 @@ class _ProfilePageState extends State<ProfilePage>
                 ),
               ),
               // Loading overlay
-              if (_isLoading)
+              if (provider.isLoading)
                 Container(
                   width: 100,
                   height: 100,
@@ -435,13 +335,13 @@ class _ProfilePageState extends State<ProfilePage>
 
           // User info
           GestureDetector(
-            onTap: _showUsernameEditDialog,
+            onTap: () => _showUsernameEditDialog(provider),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Flexible(
                   child: Text(
-                    _username,
+                    provider.username,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 20,
@@ -466,7 +366,7 @@ class _ProfilePageState extends State<ProfilePage>
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (_isPremium) ...[
+              if (provider.isPremium) ...[
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -509,6 +409,7 @@ class _ProfilePageState extends State<ProfilePage>
                   label: 'From Image',
                   onTap: _showAvatarSelectionDialog,
                   isPrimary: true,
+                  provider: provider,
                 ),
               ),
               const SizedBox(width: 12),
@@ -518,9 +419,10 @@ class _ProfilePageState extends State<ProfilePage>
                   label: 'Default',
                   onTap: _showDefaultAvatarDialog,
                   isPrimary: false,
+                  provider: provider,
                 ),
               ),
-              if (_currentAvatar != null) ...[
+              if (provider.currentAvatar != null) ...[
                 const SizedBox(width: 12),
                 _buildAvatarActionButton(
                   icon: Icons.delete_outline,
@@ -528,6 +430,7 @@ class _ProfilePageState extends State<ProfilePage>
                   onTap: _removeAvatar,
                   isPrimary: false,
                   isDelete: true,
+                  provider: provider,
                 ),
               ],
             ],
@@ -543,11 +446,12 @@ class _ProfilePageState extends State<ProfilePage>
     required VoidCallback onTap,
     required bool isPrimary,
     bool isDelete = false,
+    required ProfileProvider provider,
   }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: _isLoading ? null : onTap,
+        onTap: provider.isLoading ? null : onTap,
         borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -600,9 +504,9 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  Future<void> _claimDailyReward() async {
+  Future<void> _claimDailyReward(ProfileProvider provider) async {
     // Check if already claimed today - no snackbar, button is already disabled
-    if (!_canClaimDailyReward) {
+    if (!provider.canClaimDailyReward) {
       return;
     }
 
@@ -614,13 +518,8 @@ class _ProfilePageState extends State<ProfilePage>
         final tokenProvider = context.read<TokenProvider>();
         await tokenProvider.addTokens(result.reward);
 
-        // Update local state immediately to prevent multiple clicks
-        setState(() {
-          _canClaimDailyReward = false;
-        });
-
-        // Reload profile data
-        await _loadProfileData();
+        // Update provider state
+        await provider.claimDailyReward();
 
         NotificationService.success(
           context,
@@ -638,7 +537,7 @@ class _ProfilePageState extends State<ProfilePage>
     }
   }
 
-  Widget _buildActionsSection() {
+  Widget _buildActionsSection(ProfileProvider provider) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -676,7 +575,7 @@ class _ProfilePageState extends State<ProfilePage>
               ),
               const Spacer(),
               // Daily Reward moved to the right side of the title
-              _buildDailyRewardButton(),
+              _buildDailyRewardButton(provider),
             ],
           ),
           const SizedBox(height: 20),
@@ -695,7 +594,7 @@ class _ProfilePageState extends State<ProfilePage>
                           MaterialPageRoute(builder: (_) => const SpinPage()),
                         )
                         .then((_) {
-                          _loadProfileData();
+                          provider.refreshProfileData();
                         });
                   },
                   color: const Color(0xFFFF6A00),
@@ -722,16 +621,18 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  Widget _buildDailyRewardButton() {
+  Widget _buildDailyRewardButton(ProfileProvider provider) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: _canClaimDailyReward ? _claimDailyReward : null,
+        onTap: provider.canClaimDailyReward
+            ? () => _claimDailyReward(provider)
+            : null,
         borderRadius: BorderRadius.circular(10),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            gradient: _canClaimDailyReward
+            gradient: provider.canClaimDailyReward
                 ? const LinearGradient(
                     colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
                     begin: Alignment.topLeft,
@@ -744,7 +645,7 @@ class _ProfilePageState extends State<ProfilePage>
                   ),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: _canClaimDailyReward
+              color: provider.canClaimDailyReward
                   ? const Color(0xFF4CAF50).withOpacity(0.5)
                   : const Color(0xFF6B7280).withOpacity(0.5),
             ),
@@ -753,17 +654,19 @@ class _ProfilePageState extends State<ProfilePage>
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                _canClaimDailyReward ? Icons.card_giftcard : Icons.check_circle,
-                color: _canClaimDailyReward
+                provider.canClaimDailyReward
+                    ? Icons.card_giftcard
+                    : Icons.check_circle,
+                color: provider.canClaimDailyReward
                     ? Colors.white
                     : const Color(0xFF9CA3AF),
                 size: 16,
               ),
               const SizedBox(width: 8),
               Text(
-                _canClaimDailyReward ? 'Daily Reward' : 'Claimed',
+                provider.canClaimDailyReward ? 'Daily Reward' : 'Claimed',
                 style: TextStyle(
-                  color: _canClaimDailyReward
+                  color: provider.canClaimDailyReward
                       ? Colors.white
                       : const Color(0xFF9CA3AF),
                   fontSize: 14,
@@ -837,9 +740,9 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  Future<void> _showUsernameEditDialog() async {
+  Future<void> _showUsernameEditDialog(ProfileProvider provider) async {
     final TextEditingController controller = TextEditingController(
-      text: _username,
+      text: provider.username,
     );
 
     await showDialog<String>(
@@ -899,23 +802,13 @@ class _ProfilePageState extends State<ProfilePage>
           TextButton(
             onPressed: () async {
               final newName = controller.text.trim();
-              if (newName.isNotEmpty && newName != _username) {
-                final success = await UsernameService.setUsername(newName);
-                if (success) {
-                  setState(() {
-                    _username = newName;
-                  });
-                  Navigator.of(context).pop();
-                  NotificationService.success(
-                    context,
-                    message: 'Username updated successfully!',
-                  );
-                } else {
-                  NotificationService.error(
-                    context,
-                    message: 'Failed to update username. Please try again.',
-                  );
-                }
+              if (newName.isNotEmpty && newName != provider.username) {
+                await provider.updateUsername(newName);
+                Navigator.of(context).pop();
+                NotificationService.success(
+                  context,
+                  message: 'Username updated successfully!',
+                );
               } else {
                 Navigator.of(context).pop();
               }
@@ -930,137 +823,234 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  Future<void> _activatePremiumDemo() async {
-    await PremiumService.activatePremiumDemo();
-    // Premium status will be updated automatically via stream
-    NotificationService.success(
-      context,
-      message: 'Premium activated for demo! You can now use 2 daily spins.',
-    );
+  Future<void> _activatePremiumDemo(ProfileProvider provider) async {
+    await provider.activatePremiumDemo();
+    // Immediately grant monthly tokens on demo activation for testing
+    await TokenService.grantMonthlyPremiumTokens();
+    await context.read<TokenProvider>().refreshBalance();
+    // Ensure main navigation reacts immediately
+    await context.read<MainNavigationProvider>().refreshPremiumStatus();
+    // Show premium congrats dialog with benefits
+    if (mounted) {
+      await showPurchaseSuccessDialog(
+        context,
+        tokensAdded: 20,
+        isPremiumSubscription: true,
+      );
+    }
   }
 
-  Future<void> _deactivatePremiumDemo() async {
-    await PremiumService.deactivatePremiumDemo();
-    // Premium status will be updated automatically via stream
+  Future<void> _deactivatePremiumDemo(ProfileProvider provider) async {
+    await provider.deactivatePremiumDemo();
     NotificationService.info(context, message: 'Premium demo deactivated.');
+  }
+
+  void _openPremiumTesterMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1D162B),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.star, color: Colors.white),
+                title: const Text(
+                  'Activate Premium (Demo)',
+                  style: TextStyle(color: Colors.white),
+                ),
+                onTap: () async {
+                  Navigator.of(ctx).pop();
+                  await _activatePremiumDemo(context.read<ProfileProvider>());
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.star_border, color: Colors.white),
+                title: const Text(
+                  'Deactivate Premium (Demo)',
+                  style: TextStyle(color: Colors.white),
+                ),
+                onTap: () async {
+                  Navigator.of(ctx).pop();
+                  await _deactivatePremiumDemo(context.read<ProfileProvider>());
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.card_giftcard, color: Colors.white),
+                title: const Text(
+                  'Simulate Monthly 20-Token Grant',
+                  style: TextStyle(color: Colors.white),
+                ),
+                onTap: () async {
+                  Navigator.of(ctx).pop();
+                  await PremiumService.simulateMonthlyRenewalGrantForTesting();
+                  NotificationService.success(
+                    context,
+                    message: 'Simulated monthly 20-token grant.',
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.timer_off, color: Colors.white),
+                title: const Text(
+                  'Expire Premium Now',
+                  style: TextStyle(color: Colors.white),
+                ),
+                onTap: () async {
+                  Navigator.of(ctx).pop();
+                  await PremiumService.expirePremiumNowForTesting();
+                  NotificationService.info(
+                    context,
+                    message: 'Premium expired for testing.',
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.refresh, color: Colors.white),
+                title: const Text(
+                  'Refresh Premium Status',
+                  style: TextStyle(color: Colors.white),
+                ),
+                onTap: () async {
+                  Navigator.of(ctx).pop();
+                  await PremiumService.notifyListenersForTesting();
+                  NotificationService.info(
+                    context,
+                    message: 'Premium status refreshed.',
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F0B1A),
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFFF6A00), Color(0xFF9C27B0)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.person_rounded,
-                color: Colors.white,
-                size: 18,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'Profile',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.5,
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: const Color(0xFF0F0B1A),
-        elevation: 0,
-        toolbarHeight: AppMetrics.toolbarHeight,
-        actions: [
-          // Premium toggle button
-          Container(
-            margin: const EdgeInsets.only(right: 8),
-            child: IconButton(
-              onPressed: _isPremium
-                  ? _deactivatePremiumDemo
-                  : _activatePremiumDemo,
-              icon: Icon(
-                _isPremium ? Icons.star : Icons.star_border,
-                color: _isPremium ? const Color(0xFFFF6A00) : Colors.white,
-              ),
-              tooltip: _isPremium ? 'Deactivate Premium' : 'Activate Premium',
-            ),
-          ),
-          TokenDisplayWidget(
-            onTap: () async {
-              await Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const PurchasePage()));
-            },
-          ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          // Background decorations
-          Positioned(
-            bottom: 40,
-            left: 20,
-            child: Opacity(
-              opacity: 0.06,
-              child: Text('🕸️', style: TextStyle(fontSize: 80)),
-            ),
-          ),
-          Positioned(
-            top: 60,
-            right: 20,
-            child: Opacity(
-              opacity: 0.04,
-              child: Text('🎃', style: TextStyle(fontSize: 60)),
-            ),
-          ),
-          Positioned(
-            top: 120,
-            left: 40,
-            child: Opacity(
-              opacity: 0.04,
-              child: Text('🕷️', style: TextStyle(fontSize: 50)),
-            ),
-          ),
-
-          // Main content
-          FadeTransition(
-            opacity: _fadeAnimation,
-            child: SlideTransition(
-              position: _slideAnimation,
-              child: _isLoading
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: Color(0xFFFF6A00),
-                      ),
-                    )
-                  : Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        children: [
-                          _buildProfileHeader(),
-                          const SizedBox(height: 20),
-                          _buildActionsSection(),
-                          const SizedBox(height: 20), // Bottom padding
-                        ],
-                      ),
+    return Consumer<ProfileProvider>(
+      builder: (context, provider, child) {
+        return Scaffold(
+          backgroundColor: const Color(0xFF0F0B1A),
+          appBar: AppBar(
+            title: Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFF6A00), Color(0xFF9C27B0)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.person_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Profile',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ],
             ),
+            backgroundColor: const Color(0xFF0F0B1A),
+            elevation: 0,
+            toolbarHeight: AppMetrics.toolbarHeight,
+            actions: [
+              // Premium toggle button
+              // Container(
+              //   margin: const EdgeInsets.only(right: 8),
+              //   child: IconButton(
+              //     onPressed: _openPremiumTesterMenu,
+              //     icon: Icon(
+              //       provider.isPremium ? Icons.star : Icons.star_border,
+              //       color: provider.isPremium
+              //           ? const Color(0xFFFF6A00)
+              //           : Colors.white,
+              //     ),
+              //     tooltip: 'Premium Tester',
+              //   ),
+              // ),
+              TokenDisplayWidget(
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const PurchasePage()),
+                  );
+                },
+              ),
+            ],
           ),
-        ],
-      ),
+          body: Stack(
+            children: [
+              // Background decorations
+              Positioned(
+                bottom: 40,
+                left: 20,
+                child: Opacity(
+                  opacity: 0.06,
+                  child: Text('🕸️', style: TextStyle(fontSize: 80)),
+                ),
+              ),
+              Positioned(
+                top: 60,
+                right: 20,
+                child: Opacity(
+                  opacity: 0.04,
+                  child: Text('🎃', style: TextStyle(fontSize: 60)),
+                ),
+              ),
+              Positioned(
+                top: 120,
+                left: 40,
+                child: Opacity(
+                  opacity: 0.04,
+                  child: Text('🕷️', style: TextStyle(fontSize: 50)),
+                ),
+              ),
+
+              // Main content
+              FadeTransition(
+                opacity: _fadeAnimation,
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: provider.isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFFFF6A00),
+                          ),
+                        )
+                      : Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              _buildProfileHeader(provider),
+                              const SizedBox(height: 20),
+                              _buildActionsSection(provider),
+                              const SizedBox(height: 20), // Bottom padding
+                            ],
+                          ),
+                        ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

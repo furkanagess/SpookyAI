@@ -1,35 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../../core/services/token_service.dart';
 import '../../../../core/services/token_provider.dart';
-import '../../../../core/services/in_app_purchase_service.dart';
 import '../../../../core/services/notification_service.dart';
-import '../../../../core/services/premium_service.dart';
+import '../../../../core/services/purchase_provider.dart';
 import '../widgets/purchase_success_dialog.dart';
 import '../widgets/purchase_failed_dialog.dart';
-
-class _Pack {
-  const _Pack({
-    required this.name,
-    required this.tokens,
-    required this.productId,
-    required this.price,
-    required this.note,
-    required this.imageAsset,
-    this.whiteTint = false,
-    this.isPremium = false,
-    this.features = const [],
-  });
-  final String name;
-  final int tokens;
-  final String productId; // App Store Product ID
-  final String price; // display only
-  final String note;
-  final String imageAsset;
-  final bool whiteTint;
-  final bool isPremium;
-  final List<String> features;
-}
 
 class PurchasePage extends StatefulWidget {
   const PurchasePage();
@@ -39,148 +14,33 @@ class PurchasePage extends StatefulWidget {
 }
 
 class _PurchasePageState extends State<PurchasePage> {
-  late List<_Pack> _packs;
-  bool _isPremium = false;
-
   @override
   void initState() {
     super.initState();
-    _initialize();
-    _loadPremiumStatus();
-    _packs = [
-      // Premium Subscription Package (at the top)
-      const _Pack(
-        name: 'SpookyAI Premium',
-        tokens: 20,
-        productId: 'spookyai_premium',
-        price: '4.99',
-        note: 'Monthly subscription with exclusive benefits',
-        imageAsset: 'assets/images/ghost-face.png',
-        whiteTint: true,
-        isPremium: true,
-        features: [
-          '20 tokens per month',
-          'Access to all prompts',
-          'Daily token spin wheel',
-          'Higher token rewards',
-          'Exclusive premium themes',
-          'Priority AI processing',
-          'Ad-free experience',
-          'Advanced customization options',
-        ],
-      ),
-      // Token Packs
-      const _Pack(
-        name: '1 Token',
-        tokens: 1,
-        productId: '1_token_049',
-        price: '0.49',
-        note: 'Quick pack for a single image',
-        imageAsset: 'assets/images/spider.png',
-        whiteTint: true,
-      ),
-      const _Pack(
-        name: '10 Token',
-        tokens: 10,
-        productId: '10_token_299',
-        price: '2.99',
-        note: 'Great for small trials 🎃',
-        imageAsset: 'assets/images/pumpkin.png',
-      ),
-      const _Pack(
-        name: '25 Token',
-        tokens: 25,
-        productId: '25_token_599',
-        price: '5.99',
-        note: 'Most popular choice 👻',
-        imageAsset: 'assets/images/haunted-house.png',
-      ),
-      const _Pack(
-        name: '60 Token',
-        tokens: 60,
-        productId: '60_token_1199',
-        price: '11.99',
-        note: 'For regular creators 🧙',
-        imageAsset: 'assets/images/witch-hat.png',
-      ),
-      const _Pack(
-        name: '150 Token',
-        tokens: 150,
-        productId: '150_token_2499',
-        price: '24.99',
-        note: 'For power users 💀',
-        imageAsset: 'assets/images/ghost-face.png',
-        whiteTint: true,
-      ),
-    ];
-  }
-
-  int? _selectedIndex;
-  bool _isLoading = false;
-
-  Future<void> _initialize() async {
-    await InAppPurchaseService.initialize();
-  }
-
-  Future<void> _loadPremiumStatus() async {
-    try {
-      final isPremium = await PremiumService.isPremiumUser();
-      if (mounted) {
-        setState(() {
-          _isPremium = isPremium;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isPremium = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _buy(_Pack pack) async {
-    if (_isLoading) return;
-
-    setState(() {
-      _isLoading = true;
+    // Initialize provider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<PurchaseProvider>().initialize();
     });
+  }
+
+  Future<void> _buy(Pack pack, PurchaseProvider provider) async {
+    if (provider.isLoading) return;
 
     try {
-      final bool success = await InAppPurchaseService.purchaseProduct(
-        pack.productId,
-      );
+      await provider.buyPack(pack);
 
-      if (success) {
-        // Handle premium subscription differently
+      if (mounted) {
         if (pack.isPremium) {
-          await PremiumService.activatePremiumSubscription();
-          await TokenService.grantMonthlyPremiumTokens();
-          await TokenService.markMonthlyTokensClaimed();
+          await showPurchaseSuccessDialog(
+            context,
+            tokensAdded: pack.tokens,
+            isPremiumSubscription: true,
+          );
         } else {
-          // Regular token purchase - refresh token provider
+          // Refresh token provider for regular purchases
           final tokenProvider = context.read<TokenProvider>();
           await tokenProvider.refreshBalance();
-        }
-
-        if (mounted) {
-          if (pack.isPremium) {
-            await showPurchaseSuccessDialog(
-              context,
-              tokensAdded: pack.tokens,
-              isPremiumSubscription: true,
-            );
-          } else {
-            await showPurchaseSuccessDialog(context, tokensAdded: pack.tokens);
-          }
-        }
-      } else {
-        if (mounted) {
-          await PurchaseFailedDialog.show(
-            context,
-            reason:
-                'Unable to initiate purchase. Please check your internet connection and try again.',
-          );
+          await showPurchaseSuccessDialog(context, tokensAdded: pack.tokens);
         }
       }
     } catch (e) {
@@ -202,22 +62,12 @@ class _PurchasePageState extends State<PurchasePage> {
 
         await PurchaseFailedDialog.show(context, reason: reason);
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
   }
 
-  Future<void> _restorePurchases() async {
-    setState(() {
-      _isLoading = true;
-    });
-
+  Future<void> _restorePurchases(PurchaseProvider provider) async {
     try {
-      await InAppPurchaseService.restorePurchases();
+      await provider.restorePurchases();
       final tokenProvider = context.read<TokenProvider>();
       await tokenProvider.refreshBalance();
 
@@ -242,168 +92,175 @@ class _PurchasePageState extends State<PurchasePage> {
 
         await PurchaseFailedDialog.show(context, reason: reason);
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Packages'),
-        backgroundColor: const Color(0xFF0F0B1A),
-        elevation: 0,
-        actions: [
-          // Restore Purchases Button
-          IconButton(
-            onPressed: _isLoading ? null : _restorePurchases,
-            icon: const Icon(Icons.restore),
-            tooltip: 'Restore Purchases',
-          ),
-          // Token Balance
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1D162B),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withOpacity(0.12)),
+    return Consumer<PurchaseProvider>(
+      builder: (context, provider, child) {
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Packages'),
+            backgroundColor: const Color(0xFF0F0B1A),
+            elevation: 0,
+            actions: [
+              // Restore Purchases Button
+              IconButton(
+                onPressed: provider.isLoading
+                    ? null
+                    : () => _restorePurchases(provider),
+                icon: const Icon(Icons.restore),
+                tooltip: 'Restore Purchases',
               ),
-              child: Consumer<TokenProvider>(
-                builder: (context, tokenProvider, child) {
-                  return Row(
-                    children: [
-                      const Icon(
-                        Icons.local_fire_department,
-                        color: Color(0xFFFF6A00),
-                        size: 18,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '${tokenProvider.balance}',
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Loading Indicator
-          if (_isLoading)
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Color(0xFFFF6A00),
-                      ),
-                    ),
+              // Token Balance
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
                   ),
-                  SizedBox(width: 12),
-                  Text('Processing...'),
-                ],
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1D162B),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white.withOpacity(0.12)),
+                  ),
+                  child: Consumer<TokenProvider>(
+                    builder: (context, tokenProvider, child) {
+                      return Row(
+                        children: [
+                          const Icon(
+                            Icons.local_fire_department,
+                            color: Color(0xFFFF6A00),
+                            size: 18,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            '${tokenProvider.balance}',
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
               ),
-            ),
+            ],
+          ),
+          body: Column(
+            children: [
+              // Loading Indicator
+              if (provider.isLoading)
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Color(0xFFFF6A00),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Text('Processing...'),
+                    ],
+                  ),
+                ),
 
-          const SizedBox(height: 8),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: ListView.builder(
-                itemCount: _packs.length,
-                itemBuilder: (context, index) {
-                  final pack = _packs[index];
-                  final bool selected = _selectedIndex == index;
+              const SizedBox(height: 8),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  child: ListView.builder(
+                    itemCount: provider.packs.length,
+                    itemBuilder: (context, index) {
+                      final pack = provider.packs[index];
+                      final bool selected = provider.selectedIndex == index;
 
-                  return Padding(
-                    padding: EdgeInsets.only(
-                      top: index == 0
-                          ? 8
-                          : 0, // Reduced padding for first item (premium)
-                      bottom: index == _packs.length - 1 ? 0 : 16,
-                    ),
-                    child: GestureDetector(
-                      onTap: pack.isPremium && _isPremium
-                          ? null
-                          : () => setState(() => _selectedIndex = index),
-                      child: pack.isPremium
-                          ? SizedBox(
-                              height: 280, // Fixed height for premium card
-                              child: _PremiumSubscriptionCard(
-                                pack: pack,
-                                selected: selected,
-                                isPremiumUser: _isPremium,
-                              ),
-                            )
-                          : _SelectablePackRow(
-                              pack: pack,
-                              isBestValue: false,
-                              selected: selected,
-                            ),
-                    ),
-                  );
-                },
+                      return Padding(
+                        padding: EdgeInsets.only(
+                          top: index == 0
+                              ? 8
+                              : 0, // Reduced padding for first item (premium)
+                          bottom: index == provider.packs.length - 1 ? 0 : 16,
+                        ),
+                        child: GestureDetector(
+                          onTap: !provider.canSelectPack(pack)
+                              ? null
+                              : () => provider.setSelectedIndex(index),
+                          child: pack.isPremium
+                              ? SizedBox(
+                                  height: 280, // Fixed height for premium card
+                                  child: _PremiumSubscriptionCard(
+                                    pack: pack,
+                                    selected: selected,
+                                    isPremiumUser: provider.isPremium,
+                                  ),
+                                )
+                              : _SelectablePackRow(
+                                  pack: pack,
+                                  isBestValue: false,
+                                  selected: selected,
+                                  provider: provider,
+                                ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+          bottomNavigationBar: SafeArea(
+            minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF6A00),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                onPressed:
+                    (provider.selectedIndex == null || provider.isLoading)
+                    ? null
+                    : () async {
+                        final pack = provider.packs[provider.selectedIndex!];
+                        await _buy(pack, provider);
+                      },
+                child: provider.isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      )
+                    : const Text('Purchase Selected Pack'),
               ),
             ),
           ),
-        ],
-      ),
-      bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        child: SizedBox(
-          width: double.infinity,
-          child: FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFFF6A00),
-              padding: const EdgeInsets.symmetric(vertical: 16),
-            ),
-            onPressed: (_selectedIndex == null || _isLoading)
-                ? null
-                : () async {
-                    final pack = _packs[_selectedIndex!];
-                    await _buy(pack);
-                  },
-            child: _isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                : const Text('Purchase Selected Pack'),
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
 
 // Legacy chip removed
 
-String _pricePerToken(_Pack p) {
-  final double total = double.tryParse(p.price) ?? 0;
-  if (p.tokens == 0) return '-';
-  final double per = total / p.tokens;
-  return '${per.toStringAsFixed(2)} USD/token';
+String _pricePerToken(Pack p, PurchaseProvider provider) {
+  return provider.getPricePerToken(p);
 }
 
 class _SelectablePackRow extends StatelessWidget {
@@ -411,11 +268,13 @@ class _SelectablePackRow extends StatelessWidget {
     required this.pack,
     required this.isBestValue,
     required this.selected,
+    required this.provider,
   });
 
-  final _Pack pack;
+  final Pack pack;
   final bool isBestValue;
   final bool selected;
+  final PurchaseProvider provider;
 
   @override
   Widget build(BuildContext context) {
@@ -488,7 +347,7 @@ class _SelectablePackRow extends StatelessWidget {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                _pricePerToken(pack),
+                                _pricePerToken(pack, provider),
                                 style: const TextStyle(
                                   color: Color(0xFF8C7BA6),
                                   fontSize: 12,
@@ -652,7 +511,7 @@ class _PremiumSubscriptionCard extends StatelessWidget {
     required this.isPremiumUser,
   });
 
-  final _Pack pack;
+  final Pack pack;
   final bool selected;
   final bool isPremiumUser;
 

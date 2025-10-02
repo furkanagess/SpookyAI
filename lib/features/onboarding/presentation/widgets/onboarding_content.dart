@@ -61,7 +61,20 @@ class OnboardingContent extends StatelessWidget {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(20),
-              child: Image.asset(data.imageAsset, fit: BoxFit.cover),
+              child: Image.asset(
+                data.imageAsset,
+                fit: BoxFit.cover,
+                color:
+                    (data.imageAsset.endsWith('spider.png') ||
+                        data.imageAsset.endsWith('ghost-face.png'))
+                    ? Colors.white
+                    : null,
+                colorBlendMode:
+                    (data.imageAsset.endsWith('spider.png') ||
+                        data.imageAsset.endsWith('ghost-face.png'))
+                    ? BlendMode.srcIn
+                    : null,
+              ),
             ),
           ),
 

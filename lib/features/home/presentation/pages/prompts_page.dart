@@ -1,13 +1,12 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/services/notification_service.dart';
-import '../../../../core/services/premium_service.dart';
+import '../../../../core/services/prompts_provider.dart';
 import '../../../../core/theme/app_metrics.dart';
 import '../../../../core/widgets/token_display_widget.dart';
 import '../../data/models/prompt_category.dart';
 import '../../data/models/user_prompt.dart';
 import '../../data/services/prompt_service.dart';
-import '../../data/services/user_prompt_service.dart';
 import '../widgets/add_prompt_dialog.dart';
 import 'purchase_page.dart';
 
@@ -24,12 +23,6 @@ class _PromptsPageState extends State<PromptsPage>
     with TickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
-  List<PromptItem> _searchResults = [];
-  List<UserPrompt> _userPromptSearchResults = [];
-  List<UserPrompt> _userPrompts = [];
-  bool _isSearching = false;
-  bool _isPremium = false;
-  StreamSubscription<bool>? _premiumStatusSubscription;
 
   @override
   void initState() {
@@ -40,100 +33,26 @@ class _PromptsPageState extends State<PromptsPage>
           2, // +1 for Popular, +1 for My Prompts
       vsync: this,
     );
-    _loadUserPrompts();
-    _loadPremiumStatus();
-    _listenToPremiumStatusChanges();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Reload premium status when returning to this page
-    _loadPremiumStatus();
-  }
-
-  Future<void> _loadUserPrompts() async {
-    final userPrompts = await UserPromptService.getUserPrompts();
-    if (mounted) {
-      setState(() {
-        _userPrompts = userPrompts;
-      });
-    }
-  }
-
-  Future<void> _loadPremiumStatus() async {
-    try {
-      final isPremium = await PremiumService.isPremiumUser();
-      if (mounted) {
-        setState(() {
-          _isPremium = isPremium;
-        });
-        print('PromptsPage: Premium status updated - isPremium: $isPremium');
-      }
-    } catch (e) {
-      print('PromptsPage: Error loading premium status: $e');
-      if (mounted) {
-        setState(() {
-          _isPremium = false;
-        });
-      }
-    }
-  }
-
-  void _listenToPremiumStatusChanges() {
-    _premiumStatusSubscription = PremiumService.premiumStatusStream.listen(
-      (isPremium) {
-        if (mounted) {
-          setState(() {
-            _isPremium = isPremium;
-          });
-          print(
-            'PromptsPage: Premium status changed via stream - isPremium: $isPremium',
-          );
-        }
-      },
-      onError: (error) {
-        print('PromptsPage: Error listening to premium status: $error');
-      },
-    );
+    // Load data through provider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<PromptsProvider>().loadUserPrompts();
+    });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     _searchController.dispose();
-    _premiumStatusSubscription?.cancel();
     super.dispose();
   }
 
   void _onSearch(String query) async {
-    setState(() {
-      _isSearching = query.isNotEmpty;
-    });
-
-    if (_isSearching) {
-      final builtInResults = PromptService.searchPrompts(query);
-      final userResults = await UserPromptService.searchUserPrompts(query);
-
-      if (mounted) {
-        setState(() {
-          _searchResults = builtInResults;
-          _userPromptSearchResults = userResults;
-        });
-      }
-    }
+    await context.read<PromptsProvider>().searchPrompts(query);
   }
 
-  bool _isPromptPremium(PromptItem prompt) {
-    // Make every other prompt premium (50% premium)
-    // Use prompt title hash to determine if it's premium
-    final hash = prompt.title.hashCode;
-    return hash.abs() % 2 == 1; // Every second prompt is premium
-  }
-
-  void _onPromptTap(PromptItem prompt) async {
+  void _onPromptTap(PromptItem prompt, PromptsProvider provider) async {
     // Check if prompt is premium and user is not premium
-    if (_isPromptPremium(prompt) && !_isPremium) {
+    if (provider.isPromptLocked(prompt)) {
       _showPremiumRequiredDialog();
       return;
     }
@@ -146,9 +65,9 @@ class _PromptsPageState extends State<PromptsPage>
     }
   }
 
-  void _onUserPromptTap(UserPrompt prompt) async {
+  void _onUserPromptTap(UserPrompt prompt, PromptsProvider provider) async {
     // Update usage count
-    await UserPromptService.updatePromptUsage(prompt.id);
+    await provider.updateUserPromptUsage(prompt.id);
 
     if (widget.onPromptSelected != null) {
       widget.onPromptSelected!(prompt.prompt);
@@ -198,7 +117,7 @@ class _PromptsPageState extends State<PromptsPage>
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              _onPromptTap(prompt);
+              _onPromptTap(prompt, context.read<PromptsProvider>());
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFFF6A00),
@@ -303,7 +222,7 @@ class _PromptsPageState extends State<PromptsPage>
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              _onUserPromptTap(prompt);
+              _onUserPromptTap(prompt, context.read<PromptsProvider>());
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFFF6A00),
@@ -322,7 +241,7 @@ class _PromptsPageState extends State<PromptsPage>
       builder: (context) => AddPromptDialog(
         existingPrompt: existingPrompt,
         onPromptSaved: (savedPrompt) {
-          _loadUserPrompts();
+          context.read<PromptsProvider>().refreshData();
         },
       ),
     );
@@ -459,11 +378,8 @@ class _PromptsPageState extends State<PromptsPage>
           ElevatedButton(
             onPressed: () async {
               Navigator.of(context).pop();
-              final success = await UserPromptService.deleteUserPrompt(
-                prompt.id,
-              );
-              if (success && mounted) {
-                _loadUserPrompts();
+              await context.read<PromptsProvider>().deleteUserPrompt(prompt.id);
+              if (mounted) {
                 NotificationService.success(
                   context,
                   message: NotificationService.promptDeleted,
@@ -483,124 +399,135 @@ class _PromptsPageState extends State<PromptsPage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F0B1A),
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFFF6A00), Color(0xFF9C27B0)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.lightbulb_rounded,
-                color: Colors.white,
-                size: 18,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'Prompt Library',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.5,
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: const Color(0xFF0F0B1A),
-        elevation: 0,
-        toolbarHeight: AppMetrics.toolbarHeight,
-        actions: [
-          IconButton(
-            onPressed: () => _showAddPromptDialog(),
-            icon: const Icon(Icons.add, color: Colors.white),
-            tooltip: 'Add Custom Prompt',
-          ),
-          TokenDisplayWidget(
-            onTap: () async {
-              await Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const PurchasePage()));
-              // Premium status will be updated automatically via stream
-            },
-          ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(120),
-          child: Column(
-            children: [
-              // Search Bar
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1D162B),
-                  borderRadius: BorderRadius.circular(25),
-                  border: Border.all(color: Colors.white.withOpacity(0.1)),
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: _onSearch,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    hintText: 'Search prompts...',
-                    hintStyle: TextStyle(
-                      color: Color(0xFF8C7BA6),
-                      fontSize: 16,
+    return Consumer<PromptsProvider>(
+      builder: (context, provider, child) {
+        return Scaffold(
+          backgroundColor: const Color(0xFF0F0B1A),
+          appBar: AppBar(
+            title: Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFF6A00), Color(0xFF9C27B0)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    border: InputBorder.none,
-                    prefixIcon: Icon(Icons.search, color: Color(0xFF8C7BA6)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.lightbulb_rounded,
+                    color: Colors.white,
+                    size: 18,
                   ),
                 ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Prompt Library',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF0F0B1A),
+            elevation: 0,
+            toolbarHeight: AppMetrics.toolbarHeight,
+            actions: [
+              IconButton(
+                onPressed: () => _showAddPromptDialog(),
+                icon: const Icon(Icons.add, color: Colors.white),
+                tooltip: 'Add Custom Prompt',
               ),
-              // Tab Bar
-              Container(
-                height: 50,
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                child: TabBar(
-                  controller: _tabController,
-                  isScrollable: true,
-                  indicatorColor: const Color(0xFFFF6A00),
-                  indicatorWeight: 3,
-                  labelColor: Colors.white,
-                  unselectedLabelColor: const Color(0xFF8C7BA6),
-                  labelStyle: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  unselectedLabelStyle: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                  ),
-                  tabs: [
-                    const Tab(text: 'Popular'),
-                    const Tab(text: 'My Prompts'),
-                    ...PromptService.getAllCategories().map(
-                      (category) => Tab(text: category.name),
-                    ),
-                  ],
-                ),
+              TokenDisplayWidget(
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const PurchasePage()),
+                  );
+                  // Premium status will be updated automatically via stream
+                },
               ),
             ],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(120),
+              child: Column(
+                children: [
+                  // Search Bar
+                  Container(
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1D162B),
+                      borderRadius: BorderRadius.circular(25),
+                      border: Border.all(color: Colors.white.withOpacity(0.1)),
+                    ),
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: _onSearch,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: const InputDecoration(
+                        hintText: 'Search prompts...',
+                        hintStyle: TextStyle(
+                          color: Color(0xFF8C7BA6),
+                          fontSize: 16,
+                        ),
+                        border: InputBorder.none,
+                        prefixIcon: Icon(
+                          Icons.search,
+                          color: Color(0xFF8C7BA6),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Tab Bar
+                  Container(
+                    height: 50,
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    child: TabBar(
+                      controller: _tabController,
+                      isScrollable: true,
+                      indicatorColor: const Color(0xFFFF6A00),
+                      indicatorWeight: 3,
+                      labelColor: Colors.white,
+                      unselectedLabelColor: const Color(0xFF8C7BA6),
+                      labelStyle: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      unselectedLabelStyle: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                      ),
+                      tabs: [
+                        const Tab(text: 'Popular'),
+                        const Tab(text: 'My Prompts'),
+                        ...PromptService.getAllCategories().map(
+                          (category) => Tab(text: category.name),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
-      body: _isSearching ? _buildSearchResults() : _buildTabContent(),
+          body: provider.isSearching
+              ? _buildSearchResults(provider)
+              : _buildTabContent(provider),
+        );
+      },
     );
   }
 
-  Widget _buildSearchResults() {
-    final totalResults =
-        _searchResults.length + _userPromptSearchResults.length;
+  Widget _buildSearchResults(PromptsProvider provider) {
+    final totalResults = provider.totalSearchResults;
 
     if (totalResults == 0) {
       return const Center(
@@ -631,45 +558,45 @@ class _PromptsPageState extends State<PromptsPage>
       padding: const EdgeInsets.all(16),
       itemCount: totalResults,
       itemBuilder: (context, index) {
-        if (index < _searchResults.length) {
-          final prompt = _searchResults[index];
-          return _buildPromptCard(prompt);
+        if (index < provider.searchResults.length) {
+          final prompt = provider.searchResults[index];
+          return _buildPromptCard(prompt, provider);
         } else {
-          final userPrompt =
-              _userPromptSearchResults[index - _searchResults.length];
-          return _buildUserPromptCard(userPrompt);
+          final userPrompt = provider
+              .userPromptSearchResults[index - provider.searchResults.length];
+          return _buildUserPromptCard(userPrompt, provider);
         }
       },
     );
   }
 
-  Widget _buildTabContent() {
+  Widget _buildTabContent(PromptsProvider provider) {
     return TabBarView(
       controller: _tabController,
       children: [
-        _buildPopularPrompts(),
-        _buildMyPrompts(),
-        ...PromptService.getAllCategories().map(
-          (category) => _buildCategoryContent(category),
+        _buildPopularPrompts(provider),
+        _buildMyPrompts(provider),
+        ...provider.getAllCategories().map(
+          (category) => _buildCategoryContent(category, provider),
         ),
       ],
     );
   }
 
-  Widget _buildPopularPrompts() {
-    final popularPrompts = PromptService.getPopularPrompts();
+  Widget _buildPopularPrompts(PromptsProvider provider) {
+    final popularPrompts = provider.getPopularPrompts();
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: popularPrompts.length,
       itemBuilder: (context, index) {
         final prompt = popularPrompts[index];
-        return _buildPromptCard(prompt);
+        return _buildPromptCard(prompt, provider);
       },
     );
   }
 
-  Widget _buildMyPrompts() {
-    if (_userPrompts.isEmpty) {
+  Widget _buildMyPrompts(PromptsProvider provider) {
+    if (provider.userPrompts.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -736,32 +663,35 @@ class _PromptsPageState extends State<PromptsPage>
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: _userPrompts.length,
+      itemCount: provider.userPrompts.length,
       itemBuilder: (context, index) {
-        final prompt = _userPrompts[index];
-        return _buildUserPromptCard(prompt);
+        final prompt = provider.userPrompts[index];
+        return _buildUserPromptCard(prompt, provider);
       },
     );
   }
 
-  Widget _buildCategoryContent(PromptCategory category) {
+  Widget _buildCategoryContent(
+    PromptCategory category,
+    PromptsProvider provider,
+  ) {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: category.prompts.length,
       itemBuilder: (context, index) {
         final prompt = category.prompts[index];
-        return _buildPromptCard(prompt);
+        return _buildPromptCard(prompt, provider);
       },
     );
   }
 
-  Widget _buildPromptCard(PromptItem prompt) {
-    final isPremiumPrompt = _isPromptPremium(prompt);
-    final isLocked = isPremiumPrompt && !_isPremium;
+  Widget _buildPromptCard(PromptItem prompt, PromptsProvider provider) {
+    final isPremiumPrompt = provider.isPromptPremium(prompt);
+    final isLocked = provider.isPromptLocked(prompt);
 
     // Debug print for premium status
     print(
-      'PromptsPage: Building prompt card - Title: ${prompt.title}, isPremiumPrompt: $isPremiumPrompt, _isPremium: $_isPremium, isLocked: $isLocked',
+      'PromptsPage: Building prompt card - Title: ${prompt.title}, isPremiumPrompt: $isPremiumPrompt, isPremium: ${provider.isPremium}, isLocked: $isLocked',
     );
 
     return Container(
@@ -774,7 +704,7 @@ class _PromptsPageState extends State<PromptsPage>
       child: Stack(
         children: [
           InkWell(
-            onTap: () => _onPromptTap(prompt),
+            onTap: () => _onPromptTap(prompt, provider),
             borderRadius: BorderRadius.circular(16),
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -837,7 +767,7 @@ class _PromptsPageState extends State<PromptsPage>
                                       ),
                                     ),
                                   ),
-                                if (_isPromptPremium(prompt))
+                                if (provider.isPromptPremium(prompt))
                                   Container(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 8,
@@ -995,7 +925,7 @@ class _PromptsPageState extends State<PromptsPage>
     );
   }
 
-  Widget _buildUserPromptCard(UserPrompt prompt) {
+  Widget _buildUserPromptCard(UserPrompt prompt, PromptsProvider provider) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -1004,7 +934,7 @@ class _PromptsPageState extends State<PromptsPage>
         border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
       child: InkWell(
-        onTap: () => _onUserPromptTap(prompt),
+        onTap: () => _onUserPromptTap(prompt, provider),
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
