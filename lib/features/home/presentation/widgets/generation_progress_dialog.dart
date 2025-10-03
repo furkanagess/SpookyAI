@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 
 class GenerationProgressController {
-  GenerationProgressController(this._progress, this._close);
+  GenerationProgressController(this._progress, this._close, this._onCancel);
   final ValueNotifier<double> _progress;
   final VoidCallback _close;
+  final VoidCallback _onCancel;
 
   void setProgress(double value) {
     if (value.isNaN) return;
@@ -13,17 +14,24 @@ class GenerationProgressController {
   }
 
   void close() => _close();
+  void cancel() => _onCancel();
 }
 
 GenerationProgressController showGenerationProgressDialog(
-  BuildContext context,
-) {
+  BuildContext context, {
+  VoidCallback? onCancel,
+}) {
   final progress = ValueNotifier<double>(0.0);
 
   void closeDialog() {
     if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
     }
+  }
+
+  void cancelGeneration() {
+    onCancel?.call();
+    closeDialog();
   }
 
   showDialog<void>(
@@ -90,6 +98,21 @@ GenerationProgressController showGenerationProgressDialog(
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Color(0xFF8C7BA6), fontSize: 12),
               ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: cancelGeneration,
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFFE57373),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                ),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+              ),
             ],
           ),
         ),
@@ -112,5 +135,5 @@ GenerationProgressController showGenerationProgressDialog(
     tick();
   });
 
-  return GenerationProgressController(progress, closeDialog);
+  return GenerationProgressController(progress, closeDialog, cancelGeneration);
 }

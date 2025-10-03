@@ -7,7 +7,6 @@ import '../../../../core/services/token_provider.dart';
 import '../../../../core/services/main_navigation_provider.dart';
 import '../../../../core/widgets/token_display_widget.dart';
 
-import '../../../../core/config/api_keys.dart';
 import '../../../../core/services/stability_service.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/theme/app_metrics.dart';
@@ -114,8 +113,6 @@ class _MainNavigationPageRefactoredState
     _pageController.dispose();
     super.dispose();
   }
-
-  bool get _hasStabilityKey => ApiKeys.hasStabilityKey;
 
   Future<void> _showGenerationConfirmationDialog() async {
     final provider = context.read<MainNavigationProvider>();
@@ -301,10 +298,11 @@ class _MainNavigationPageRefactoredState
   }
 
   Future<void> _generateImage() async {
-    // Consume 1 token upfront
     final tokenProvider = context.read<TokenProvider>();
-    final bool hasToken = await tokenProvider.consumeOne();
-    if (!hasToken) {
+
+    // Check if user has tokens before starting
+    await tokenProvider.loadBalance();
+    if (tokenProvider.balance < 1) {
       if (!mounted) return;
       NotificationService.error(
         context,
@@ -322,10 +320,24 @@ class _MainNavigationPageRefactoredState
     final provider = context.read<MainNavigationProvider>();
     provider.setGenerating(true);
 
-    final progress = showGenerationProgressDialog(context);
+    bool isCancelled = false;
+    final progress = showGenerationProgressDialog(
+      context,
+      onCancel: () {
+        isCancelled = true;
+        provider.setGenerating(false);
+      },
+    );
 
     try {
       Uint8List resultBytes;
+
+      // Create cancellation callback
+      Future<void> checkCancellation() async {
+        if (isCancelled) {
+          throw Exception('Generation cancelled by user');
+        }
+      }
 
       if (provider.uploadedImage != null) {
         // Standard image-to-image
@@ -334,13 +346,27 @@ class _MainNavigationPageRefactoredState
           imageBytes: provider.uploadedImage!,
           imageStrength: 0.75,
           cfgScale: 7,
+          onCancel: checkCancellation,
         );
       } else {
         // Standard text-to-image
         resultBytes = await _stability.generateImageBytes(
           prompt: provider.prompt,
+          onCancel: checkCancellation,
         );
       }
+
+      // Check if generation was cancelled
+      if (isCancelled) {
+        try {
+          progress.close();
+        } catch (_) {}
+        provider.setGenerating(false);
+        return;
+      }
+
+      // Consume token only after successful generation
+      await tokenProvider.consumeOne();
 
       if (!mounted) return;
       provider.addGeneratedImage(resultBytes);
@@ -362,15 +388,17 @@ class _MainNavigationPageRefactoredState
       try {
         progress.close();
       } catch (_) {}
-      // Refund token on failure
-      final tokenProvider = context.read<TokenProvider>();
-      await tokenProvider.refundOne();
-      NotificationService.error(
-        context,
-        message: NotificationService.generationFailed,
-      );
+
+      // Only show error if not cancelled
+      if (!isCancelled &&
+          e.toString() != 'Exception: Generation cancelled by user') {
+        NotificationService.error(
+          context,
+          message: NotificationService.generationFailed,
+        );
+      }
     } finally {
-      if (mounted) {
+      if (mounted && !isCancelled) {
         provider.setGenerating(false);
       }
     }

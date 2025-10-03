@@ -121,7 +121,7 @@ class _ProfilePageState extends State<ProfilePage>
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1D162B),
         title: const Text(
-          'Choose Default Avatar',
+          'Choose Avatar',
           style: TextStyle(color: Colors.white),
         ),
         content: SizedBox(
@@ -193,10 +193,7 @@ class _ProfilePageState extends State<ProfilePage>
     if (selectedAvatar != null) {
       await context.read<ProfileProvider>().setDefaultAvatar(selectedAvatar);
       if (mounted) {
-        NotificationService.success(
-          context,
-          message: 'Default avatar selected!',
-        );
+        NotificationService.success(context, message: 'Avatar selected!');
       }
     }
   }
@@ -416,7 +413,7 @@ class _ProfilePageState extends State<ProfilePage>
               Expanded(
                 child: _buildAvatarActionButton(
                   icon: Icons.emoji_emotions,
-                  label: 'Default',
+                  label: 'Avatar',
                   onTap: _showDefaultAvatarDialog,
                   isPrimary: false,
                   provider: provider,

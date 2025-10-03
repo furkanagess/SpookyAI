@@ -31,7 +31,7 @@ class MainNavigationProvider extends ChangeNotifier {
   final List<Uint8List> _generatedImages = <Uint8List>[];
   List<Uint8List> get generatedImages => List.unmodifiable(_generatedImages);
 
-  GenerationMode _activeMode = GenerationMode.image;
+  GenerationMode _activeMode = GenerationMode.text;
   GenerationMode get activeMode => _activeMode;
 
   // Animation controllers state
