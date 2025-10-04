@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/services/token_provider.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/services/purchase_provider.dart';
+import '../../../../core/services/in_app_purchase_service.dart';
 import '../widgets/purchase_success_dialog.dart';
 import '../widgets/purchase_failed_dialog.dart';
 
@@ -102,6 +104,72 @@ class _PurchasePageState extends State<PurchasePage> {
     }
   }
 
+  Future<void> _showDebugInfo(
+    BuildContext context,
+    PurchaseProvider provider,
+  ) async {
+    // Print debug info to console
+    InAppPurchaseService.debugServiceStatus();
+
+    // Show debug dialog
+    if (!context.mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Debug Info'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Platform: ${defaultTargetPlatform.name}'),
+              Text('Billing Available: ${InAppPurchaseService.isAvailable}'),
+              Text('Products Loaded: ${InAppPurchaseService.products.length}'),
+              Text(
+                'Query Error: ${InAppPurchaseService.queryProductError ?? 'None'}',
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Available Products:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              ...InAppPurchaseService.products.map(
+                (product) => Text(
+                  '• ${product.id}: ${product.title} (${product.price})',
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Expected Products:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const Text(
+                '• 1_token, 10_token, 25_token, 60_token, 150_token, spookyai_premium',
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              await InAppPurchaseService.forceReloadProducts();
+              if (context.mounted) {
+                Navigator.of(context).pop();
+                _showDebugInfo(context, provider);
+              }
+            },
+            child: const Text('Reload Products'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<PurchaseProvider>(
@@ -112,6 +180,13 @@ class _PurchasePageState extends State<PurchasePage> {
             backgroundColor: const Color(0xFF0F0B1A),
             elevation: 0,
             actions: [
+              // Debug Button (only in debug mode)
+              if (kDebugMode)
+                IconButton(
+                  onPressed: () => _showDebugInfo(context, provider),
+                  icon: const Icon(Icons.bug_report),
+                  tooltip: 'Debug Info',
+                ),
               // Restore Purchases Button
               IconButton(
                 onPressed: provider.isLoading

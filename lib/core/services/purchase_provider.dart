@@ -41,9 +41,20 @@ class PurchaseProvider extends ChangeNotifier {
 
   // Initialize the provider
   Future<void> initialize() async {
+    debugPrint('PurchaseProvider: Initializing...');
     await _initialize();
     await _loadPremiumStatus();
     _initializePacks();
+
+    // Debug service status
+    InAppPurchaseService.debugServiceStatus();
+
+    // Test setup
+    final setupOk = await testPurchaseSetup();
+    if (!setupOk) {
+      debugPrint('PurchaseProvider: WARNING - Purchase setup test failed!');
+      debugPrint('PurchaseProvider: This may cause "product not found" errors');
+    }
   }
 
   Future<void> _initialize() async {
@@ -80,14 +91,10 @@ class PurchaseProvider extends ChangeNotifier {
           '20 tokens per month',
           'Access to all prompts',
           'Daily token spin wheel',
-          'Higher token rewards',
-          'Exclusive premium themes',
           'Priority AI processing',
-          'Ad-free experience',
-          'Advanced customization options',
         ],
       ),
-      // Token Packs
+      // Token Packs - Updated with correct Play Console product IDs
       const Pack(
         name: '1 Token',
         tokens: 1,
@@ -154,16 +161,54 @@ class PurchaseProvider extends ChangeNotifier {
 
   // Buy a pack, returns true if purchase completed successfully
   Future<bool> buyPack(Pack pack) async {
-    if (_isLoading) return false;
+    if (_isLoading) {
+      debugPrint('PurchaseProvider: Already loading, skipping purchase');
+      return false;
+    }
 
+    debugPrint(
+      'PurchaseProvider: Starting purchase for ${pack.name} (${pack.productId})',
+    );
     setLoading(true);
 
     try {
+      // Check if service is available
+      if (!InAppPurchaseService.isAvailable) {
+        debugPrint('PurchaseProvider: In-app purchase not available');
+        return false;
+      }
+
+      // Check if products are loaded
+      if (InAppPurchaseService.products.isEmpty) {
+        debugPrint(
+          'PurchaseProvider: No products loaded, attempting to reload...',
+        );
+        final reloadSuccess = await InAppPurchaseService.forceReloadProducts();
+        if (!reloadSuccess) {
+          debugPrint('PurchaseProvider: Failed to reload products');
+          debugPrint(
+            'PurchaseProvider: Query error: ${InAppPurchaseService.queryProductError}',
+          );
+          return false;
+        }
+      }
+
+      // Check if specific product is available
+      if (!InAppPurchaseService.isProductAvailable(pack.productId)) {
+        debugPrint('PurchaseProvider: Product ${pack.productId} not available');
+        debugPrint(
+          'PurchaseProvider: Available products: ${InAppPurchaseService.products.map((p) => p.id).join(', ')}',
+        );
+        return false;
+      }
+
       final bool success = await InAppPurchaseService.purchaseProduct(
         pack.productId,
       );
 
       if (success) {
+        debugPrint('PurchaseProvider: Purchase successful for ${pack.name}');
+
         // Handle premium subscription differently
         if (pack.isPremium) {
           await PremiumService.activatePremiumSubscription();
@@ -175,14 +220,17 @@ class PurchaseProvider extends ChangeNotifier {
           // This will be handled by the calling widget
         }
 
-        debugPrint('PurchaseProvider: Purchase successful for ${pack.name}');
         return true;
       } else {
         debugPrint('PurchaseProvider: Purchase failed for ${pack.name}');
+        debugPrint(
+          'PurchaseProvider: Query error: ${InAppPurchaseService.queryProductError}',
+        );
         return false;
       }
     } catch (e) {
       debugPrint('PurchaseProvider: Error during purchase: $e');
+      debugPrint('PurchaseProvider: Stack trace: ${StackTrace.current}');
       return false;
     } finally {
       setLoading(false);
@@ -225,6 +273,46 @@ class PurchaseProvider extends ChangeNotifier {
     if (pack.tokens == 0) return '-';
     final double per = total / pack.tokens;
     return '${per.toStringAsFixed(2)} USD/token';
+  }
+
+  // Test method to verify purchase setup
+  Future<bool> testPurchaseSetup() async {
+    debugPrint('PurchaseProvider: Testing purchase setup...');
+
+    // Check service availability
+    if (!InAppPurchaseService.isAvailable) {
+      debugPrint('PurchaseProvider: In-app purchase not available');
+      return false;
+    }
+
+    // Check products
+    if (InAppPurchaseService.products.isEmpty) {
+      debugPrint('PurchaseProvider: No products loaded');
+      return false;
+    }
+
+    // Check for our specific products
+    final requiredProducts = [
+      '1_token',
+      '10_token',
+      '25_token',
+      '60_token',
+      '150_token',
+      'spookyai_premium',
+    ];
+    final loadedProductIds = InAppPurchaseService.products
+        .map((p) => p.id)
+        .toSet();
+
+    for (final productId in requiredProducts) {
+      if (!loadedProductIds.contains(productId)) {
+        debugPrint('PurchaseProvider: Missing product: $productId');
+        return false;
+      }
+    }
+
+    debugPrint('PurchaseProvider: All required products are available');
+    return true;
   }
 
   @override

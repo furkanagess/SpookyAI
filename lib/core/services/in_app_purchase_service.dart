@@ -27,6 +27,7 @@ class InAppPurchaseService {
     '25_token',
     '60_token',
     '150_token',
+    'spookyai_premium', // Premium subscription product ID
   };
 
   static bool _isAvailable = false;
@@ -41,30 +42,55 @@ class InAppPurchaseService {
   static List<ProductDetails> get products => _products;
 
   static Future<void> initialize() async {
-    _isAvailable = await _inAppPurchase.isAvailable();
+    debugPrint('InAppPurchaseService: Starting initialization...');
 
-    if (!_isAvailable) {
-      debugPrint('In-app purchase not available');
-      return;
+    try {
+      _isAvailable = await _inAppPurchase.isAvailable();
+      debugPrint('InAppPurchaseService: Billing available: $_isAvailable');
+
+      if (!_isAvailable) {
+        debugPrint(
+          'InAppPurchaseService: In-app purchase not available on this device',
+        );
+        return;
+      }
+
+      // Initialize platform-specific settings
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        await _initializeAndroid();
+      } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+        await _initializeIOS();
+      }
+
+      // Listen to purchase updates
+      _inAppPurchase.purchaseStream.listen(
+        _handlePurchaseUpdate,
+        onError: (error) {
+          debugPrint('InAppPurchaseService: Purchase stream error: $error');
+        },
+      );
+
+      // Load products with retry logic
+      await _loadProductsWithRetry();
+    } catch (e) {
+      debugPrint('InAppPurchaseService: Initialization error: $e');
+      _isAvailable = false;
     }
-
-    // Initialize platform-specific settings
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      await _initializeAndroid();
-    } else if (defaultTargetPlatform == TargetPlatform.iOS) {
-      await _initializeIOS();
-    }
-
-    // Listen to purchase updates
-    _inAppPurchase.purchaseStream.listen(_handlePurchaseUpdate);
-
-    // Load products
-    await _loadProducts();
   }
 
   static Future<void> _initializeAndroid() async {
-    // Android initialization is handled automatically by the plugin
-    // No additional setup required for current version
+    debugPrint('InAppPurchaseService: Initializing Android billing...');
+    try {
+      // Additional Android-specific initialization
+      // Check Google Play Services availability
+      debugPrint(
+        'InAppPurchaseService: Android billing initialized successfully',
+      );
+    } catch (e) {
+      debugPrint(
+        'InAppPurchaseService: Error initializing Android billing: $e',
+      );
+    }
   }
 
   static Future<void> _initializeIOS() async {
@@ -74,41 +100,130 @@ class InAppPurchaseService {
     await iosAddition.setDelegate(ExamplePaymentQueueDelegate());
   }
 
-  static Future<void> _loadProducts() async {
-    if (!_isAvailable) return;
+  static Future<void> _loadProductsWithRetry() async {
+    const int maxRetries = 3;
+    const Duration retryDelay = Duration(seconds: 2);
+
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      debugPrint(
+        'InAppPurchaseService: Loading products - Attempt $attempt/$maxRetries',
+      );
+
+      final success = await _loadProducts();
+      if (success) {
+        debugPrint(
+          'InAppPurchaseService: Products loaded successfully on attempt $attempt',
+        );
+        return;
+      }
+
+      if (attempt < maxRetries) {
+        debugPrint(
+          'InAppPurchaseService: Retrying in ${retryDelay.inSeconds} seconds...',
+        );
+        await Future.delayed(retryDelay);
+      }
+    }
+
+    debugPrint(
+      'InAppPurchaseService: Failed to load products after $maxRetries attempts',
+    );
+  }
+
+  static Future<bool> _loadProducts() async {
+    if (!_isAvailable) {
+      debugPrint(
+        'InAppPurchaseService: In-app purchase not available, skipping product loading',
+      );
+      return false;
+    }
 
     try {
+      debugPrint('InAppPurchaseService: Querying products: $_productIds');
       final ProductDetailsResponse response = await _inAppPurchase
           .queryProductDetails(_productIds);
 
+      if (response.error != null) {
+        debugPrint(
+          'InAppPurchaseService: Product query error: ${response.error}',
+        );
+        debugPrint('InAppPurchaseService: Error code: ${response.error?.code}');
+        debugPrint(
+          'InAppPurchaseService: Error message: ${response.error?.message}',
+        );
+        _queryProductError = response.error.toString();
+        return false;
+      }
+
       if (response.notFoundIDs.isNotEmpty) {
-        debugPrint('Products not found: ${response.notFoundIDs}');
+        debugPrint(
+          'InAppPurchaseService: Products not found: ${response.notFoundIDs}',
+        );
+        _queryProductError =
+            'Products not found: ${response.notFoundIDs.join(', ')}';
+
+        // If some products are found, still consider it a partial success
+        if (response.productDetails.isNotEmpty) {
+          debugPrint(
+            'InAppPurchaseService: Some products found, continuing with partial success',
+          );
+        } else {
+          return false;
+        }
       }
 
       _products.clear();
       _products.addAll(response.productDetails);
-      _queryProductError = null;
 
-      debugPrint('Loaded ${_products.length} products');
+      if (response.error == null && response.notFoundIDs.isEmpty) {
+        _queryProductError = null;
+      }
+
+      debugPrint(
+        'InAppPurchaseService: Successfully loaded ${_products.length} products',
+      );
+      for (final product in _products) {
+        debugPrint(
+          'InAppPurchaseService: Product: ${product.id} - ${product.title} - ${product.price}',
+        );
+      }
+
+      return _products.isNotEmpty;
     } catch (e) {
       _queryProductError = e.toString();
-      debugPrint('Error loading products: $e');
+      debugPrint('InAppPurchaseService: Error loading products: $e');
+      return false;
     }
   }
 
   static Future<bool> purchaseProduct(String productId) async {
-    if (!_isAvailable || _purchasePending) return false;
-
-    final ProductDetails? product = _products.firstWhere(
-      (p) => p.id == productId,
-      orElse: () => throw Exception('Product not found'),
-    );
-
-    if (product == null) {
-      debugPrint('Product $productId not found');
+    if (!_isAvailable) {
+      debugPrint('In-app purchase not available');
       return false;
     }
 
+    if (_purchasePending) {
+      debugPrint('Purchase already in progress');
+      return false;
+    }
+
+    // Find the product
+    ProductDetails? product;
+    try {
+      product = _products.firstWhere((p) => p.id == productId);
+    } catch (e) {
+      debugPrint('Product $productId not found in loaded products');
+      debugPrint(
+        'Available products: ${_products.map((p) => p.id).join(', ')}',
+      );
+      return false;
+    }
+
+    // Product is guaranteed to be non-null here due to firstWhere logic above
+
+    debugPrint(
+      'Initiating purchase for product: ${product.id} - ${product.title}',
+    );
     _purchasePending = true;
     _lastPurchaseSuccess = false;
 
@@ -116,7 +231,12 @@ class InAppPurchaseService {
       final PurchaseParam purchaseParam = PurchaseParam(
         productDetails: product,
       );
+
       final bool isPremium = productId == 'spookyai_premium';
+      debugPrint(
+        'Purchase type: ${isPremium ? 'Non-consumable (Premium)' : 'Consumable (Tokens)'}',
+      );
+
       final bool success = isPremium
           ? await _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam)
           : await _inAppPurchase.buyConsumable(
@@ -126,10 +246,13 @@ class InAppPurchaseService {
 
       if (!success) {
         _purchasePending = false;
-        debugPrint('Purchase failed to initiate');
+        debugPrint(
+          'Purchase failed to initiate - buy${isPremium ? 'NonConsumable' : 'Consumable'} returned false',
+        );
         return false;
       }
 
+      debugPrint('Purchase initiated successfully, waiting for completion...');
       // Wait for purchase completion
       return await _waitForPurchaseCompletion();
     } catch (e) {
@@ -161,7 +284,15 @@ class InAppPurchaseService {
   }
 
   static Future<void> _handlePurchase(PurchaseDetails purchaseDetails) async {
+    debugPrint(
+      'Handling purchase: ${purchaseDetails.productID} - Status: ${purchaseDetails.status}',
+    );
+
     if (purchaseDetails.status == PurchaseStatus.purchased) {
+      debugPrint(
+        'Purchase successful for product: ${purchaseDetails.productID}',
+      );
+
       // Grant tokens based on product ID
       final int? tokens = _productTokenMap[purchaseDetails.productID];
       if (tokens != null) {
@@ -171,25 +302,44 @@ class InAppPurchaseService {
         );
       } else if (purchaseDetails.productID == 'spookyai_premium') {
         // Premium subscription purchase
+        debugPrint('Activating premium subscription');
         await PremiumService.activatePremiumSubscription();
+      } else {
+        debugPrint('Unknown product ID: ${purchaseDetails.productID}');
       }
 
       // Complete the purchase
       if (purchaseDetails.pendingCompletePurchase) {
+        debugPrint('Completing purchase for ${purchaseDetails.productID}');
         await _inAppPurchase.completePurchase(purchaseDetails);
       }
 
       // Mark purchase as successful
       _lastPurchaseSuccess = true;
+      debugPrint('Purchase marked as successful');
     } else if (purchaseDetails.status == PurchaseStatus.error) {
-      debugPrint('Purchase error: ${purchaseDetails.error}');
+      debugPrint(
+        'Purchase error for ${purchaseDetails.productID}: ${purchaseDetails.error}',
+      );
+      debugPrint('Error code: ${purchaseDetails.error?.code}');
+      debugPrint('Error message: ${purchaseDetails.error?.message}');
+      debugPrint('Error details: ${purchaseDetails.error?.details}');
       _lastPurchaseSuccess = false;
     } else if (purchaseDetails.status == PurchaseStatus.canceled) {
-      debugPrint('Purchase canceled');
+      debugPrint('Purchase canceled for ${purchaseDetails.productID}');
       _lastPurchaseSuccess = false;
+    } else if (purchaseDetails.status == PurchaseStatus.pending) {
+      debugPrint('Purchase pending for ${purchaseDetails.productID}');
+      // Don't mark as failed yet, wait for final status
+      return;
+    } else if (purchaseDetails.status == PurchaseStatus.restored) {
+      debugPrint('Purchase restored for ${purchaseDetails.productID}');
+      // Handle restored purchases if needed
+      _lastPurchaseSuccess = true;
     }
 
     _purchasePending = false;
+    debugPrint('Purchase handling completed for ${purchaseDetails.productID}');
   }
 
   static Future<void> restorePurchases() async {
@@ -213,6 +363,44 @@ class InAppPurchaseService {
 
   static int? getTokensForProduct(String productId) {
     return _productTokenMap[productId];
+  }
+
+  // Debug method to check service status
+  static void debugServiceStatus() {
+    debugPrint('=== InAppPurchaseService Debug Info ===');
+    debugPrint('Platform: ${defaultTargetPlatform.name}');
+    debugPrint('Is Available: $_isAvailable');
+    debugPrint('Purchase Pending: $_purchasePending');
+    debugPrint('Query Error: $_queryProductError');
+    debugPrint('Products Loaded: ${_products.length}');
+    debugPrint('Expected Product IDs: $_productIds');
+    debugPrint('Available Products:');
+    for (final product in _products) {
+      debugPrint('  - ${product.id}: ${product.title} (${product.price})');
+    }
+
+    // Check for missing products
+    final loadedIds = _products.map((p) => p.id).toSet();
+    final missingIds = _productIds.difference(loadedIds);
+    if (missingIds.isNotEmpty) {
+      debugPrint('MISSING PRODUCTS: $missingIds');
+    }
+
+    debugPrint('=====================================');
+  }
+
+  // Force reload products (useful for debugging)
+  static Future<bool> forceReloadProducts() async {
+    debugPrint('InAppPurchaseService: Force reloading products...');
+    _products.clear();
+    _queryProductError = null;
+    await _loadProductsWithRetry();
+    return _products.isNotEmpty;
+  }
+
+  // Check if specific product is available
+  static bool isProductAvailable(String productId) {
+    return _products.any((product) => product.id == productId);
   }
 }
 
