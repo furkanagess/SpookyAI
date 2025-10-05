@@ -95,67 +95,80 @@
 
 <div align="center">
   
-  ### 🎃 **Main Interface**
-  <table style="margin: 0 auto; border-collapse: collapse;">
+  ### 🎃 **Complete App Experience - 3x3 Grid**
+  
+  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 15px; margin: 20px 0; color: white;">
+    <h3 style="margin: 0 0 15px 0;">✨ SpookyAI in Action ✨</h3>
+    <p style="margin: 0; opacity: 0.9;">Experience the complete journey from start to finish</p>
+  </div>
+  
+  <div style="overflow-x: auto; margin: 20px 0;">
+    <table style="margin: 0 auto; border-collapse: collapse; background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.1); min-width: 600px;">
     <tr>
-      <td style="padding: 8px; text-align: center;">
-        <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.28.56.png" alt="Main Screen" width="180" style="border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
-        <div style="font-size: 12px; color: #666; margin-top: 6px;">Main Screen</div>
+      <td style="padding: 12px; text-align: center; background: #f8f9fa; border-right: 1px solid #eee; border-bottom: 1px solid #eee;">
+        <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.28.56.png" alt="Main Screen" width="160" style="border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+        <div style="font-size: 11px; color: #333; margin-top: 8px; font-weight: 600;">🏠 Main Screen</div>
+        <div style="font-size: 10px; color: #666; margin-top: 2px;">Home & Navigation</div>
       </td>
-      <td style="padding: 8px; text-align: center;">
-        <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.29.08.png" alt="Generation" width="180" style="border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
-        <div style="font-size: 12px; color: #666; margin-top: 6px;">Generation</div>
+      <td style="padding: 12px; text-align: center; background: #f8f9fa; border-right: 1px solid #eee; border-bottom: 1px solid #eee;">
+        <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.29.08.png" alt="Generation" width="160" style="border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+        <div style="font-size: 11px; color: #333; margin-top: 8px; font-weight: 600;">🎨 Generation</div>
+        <div style="font-size: 10px; color: #666; margin-top: 2px;">AI Processing</div>
       </td>
-      <td style="padding: 8px; text-align: center;">
-        <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.39.53.png" alt="Upload" width="180" style="border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
-        <div style="font-size: 12px; color: #666; margin-top: 6px;">Upload</div>
+      <td style="padding: 12px; text-align: center; background: #f8f9fa; border-bottom: 1px solid #eee;">
+        <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.39.53.png" alt="Upload" width="160" style="border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+        <div style="font-size: 11px; color: #333; margin-top: 8px; font-weight: 600;">📸 Upload</div>
+        <div style="font-size: 10px; color: #666; margin-top: 2px;">Photo Selection</div>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 12px; text-align: center; background: #f8f9fa; border-right: 1px solid #eee; border-bottom: 1px solid #eee;">
+        <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.39.59.png" alt="Prompt Input" width="160" style="border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+        <div style="font-size: 11px; color: #333; margin-top: 8px; font-weight: 600;">✍️ Prompt Input</div>
+        <div style="font-size: 10px; color: #666; margin-top: 2px;">Text Description</div>
+      </td>
+      <td style="padding: 12px; text-align: center; background: #f8f9fa; border-right: 1px solid #eee; border-bottom: 1px solid #eee;">
+        <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.07.png" alt="Mode Selection" width="160" style="border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+        <div style="font-size: 11px; color: #333; margin-top: 8px; font-weight: 600;">⚙️ Mode Selection</div>
+        <div style="font-size: 10px; color: #666; margin-top: 2px;">Generation Options</div>
+      </td>
+      <td style="padding: 12px; text-align: center; background: #f8f9fa; border-bottom: 1px solid #eee;">
+        <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.23.png" alt="Generation Process" width="160" style="border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+        <div style="font-size: 11px; color: #333; margin-top: 8px; font-weight: 600;">🔄 Processing</div>
+        <div style="font-size: 10px; color: #666; margin-top: 2px;">AI at Work</div>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 12px; text-align: center; background: #f8f9fa; border-right: 1px solid #eee;">
+        <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.38.png" alt="Generated Image" width="160" style="border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+        <div style="font-size: 11px; color: #333; margin-top: 8px; font-weight: 600;">✨ Generated</div>
+        <div style="font-size: 10px; color: #666; margin-top: 2px;">Final Result</div>
+      </td>
+      <td style="padding: 12px; text-align: center; background: #f8f9fa; border-right: 1px solid #eee;">
+        <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.43.28.png" alt="Gallery View" width="160" style="border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+        <div style="font-size: 11px; color: #333; margin-top: 8px; font-weight: 600;">🖼️ Gallery</div>
+        <div style="font-size: 10px; color: #666; margin-top: 2px;">Your Creations</div>
+      </td>
+      <td style="padding: 12px; text-align: center; background: #f8f9fa;">
+        <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.43.32.png" alt="Settings" width="160" style="border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+        <div style="font-size: 11px; color: #333; margin-top: 8px; font-weight: 600;">⚙️ Settings</div>
+        <div style="font-size: 10px; color: #666; margin-top: 2px;">App Configuration</div>
       </td>
     </tr>
   </table>
+  </div>
   
-  <details style="margin: 20px 0;">
-    <summary style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 18px;">
-      🎨 AI Generation Features
-    </summary>
-    <table style="margin: 10px auto; border-collapse: collapse;">
-      <tr>
-        <td style="padding: 8px; text-align: center;">
-          <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.39.59.png" alt="Prompt Input" width="180" style="border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
-          <div style="font-size: 12px; color: #666; margin-top: 6px;">Prompt Input</div>
-        </td>
-        <td style="padding: 8px; text-align: center;">
-          <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.07.png" alt="Mode Selection" width="180" style="border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
-          <div style="font-size: 12px; color: #666; margin-top: 6px;">Mode Selection</div>
-        </td>
-        <td style="padding: 8px; text-align: center;">
-          <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.23.png" alt="Generation Process" width="180" style="border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
-          <div style="font-size: 12px; color: #666; margin-top: 6px;">Generation Process</div>
-        </td>
-      </tr>
-    </table>
-  </details>
+  <div style="background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%); padding: 20px; border-radius: 15px; margin: 20px 0; color: white; text-align: center;">
+    <h3 style="margin: 0 0 10px 0;">🎯 User Journey Flow</h3>
+    <p style="margin: 0; opacity: 0.9;">From upload to masterpiece - every step is intuitive and delightful</p>
+  </div>
   
-  <details style="margin: 20px 0;">
-    <summary style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); color: white; padding: 15px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 18px;">
-      📸 Results & Gallery
-    </summary>
-    <table style="margin: 10px auto; border-collapse: collapse;">
-      <tr>
-        <td style="padding: 8px; text-align: center;">
-          <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.38.png" alt="Generated Image" width="180" style="border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
-          <div style="font-size: 12px; color: #666; margin-top: 6px;">Generated</div>
-        </td>
-        <td style="padding: 8px; text-align: center;">
-          <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.43.28.png" alt="Gallery View" width="180" style="border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
-          <div style="font-size: 12px; color: #666; margin-top: 6px;">Gallery</div>
-        </td>
-        <td style="padding: 8px; text-align: center;">
-          <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.43.32.png" alt="Settings" width="180" style="border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
-          <div style="font-size: 12px; color: #666; margin-top: 6px;">Settings</div>
-        </td>
-      </tr>
-    </table>
-  </details>
+  <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin: 15px 0; border-left: 4px solid #667eea;">
+    <p style="margin: 0; color: #666; font-size: 14px;">
+      <strong>📱 Mobile-Friendly:</strong> The grid above is fully responsive and scrollable on mobile devices. 
+      Each screenshot shows a key step in the SpookyAI experience, from initial setup to final masterpiece creation.
+    </p>
+  </div>
   
   <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 20px; margin: 30px 0; color: white; text-align: center;">
     <h3 style="margin: 0 0 15px 0; font-size: 24px;">✨ Experience the Magic</h3>
