@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'core/theme/app_theme.dart';
 import 'features/home/presentation/pages/splash_page.dart';
@@ -19,6 +20,15 @@ import 'core/services/quick_actions_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Load environment variables
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    // .env file not found, continue without it
+    // In production, API key should be provided via other means
+    print('Warning: .env file not found. API key may not be available.');
+  }
 
   // Initialize in-app purchase service
   await InAppPurchaseService.initialize();
