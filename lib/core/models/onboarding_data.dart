@@ -3,15 +3,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 class OnboardingData {
   const OnboardingData({
     required this.title,
-    required this.description,
     required this.imageAsset,
     required this.icon,
+    this.description,
     this.buttonText,
     this.isLastPage = false,
   });
 
   final String title;
-  final String description;
+  final String? description;
   final String imageAsset;
   final String icon;
   final String? buttonText;

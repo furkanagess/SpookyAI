@@ -51,10 +51,10 @@ class _StatsPageState extends State<StatsPage> with TickerProviderStateMixin {
 
   Widget _buildStatsSection(StatsProvider provider) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: const Color(0xFF1D162B),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
       child: Column(
@@ -63,31 +63,31 @@ class _StatsPageState extends State<StatsPage> with TickerProviderStateMixin {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFFFF6A00), Color(0xFF9C27B0)],
                   ),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(4),
                 ),
                 child: const Icon(
                   Icons.trending_up,
                   color: Colors.white,
-                  size: 16,
+                  size: 14,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               const Text(
                 'Your Stats',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
 
           // Stats grid - compact layout
           Row(
@@ -100,7 +100,7 @@ class _StatsPageState extends State<StatsPage> with TickerProviderStateMixin {
                   color: const Color(0xFFFF6A00),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Expanded(
                 child: _buildCompactStatCard(
                   icon: Icons.emoji_events,
@@ -111,7 +111,7 @@ class _StatsPageState extends State<StatsPage> with TickerProviderStateMixin {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Row(
             children: [
               Expanded(
@@ -122,7 +122,7 @@ class _StatsPageState extends State<StatsPage> with TickerProviderStateMixin {
                   color: const Color(0xFF4CAF50),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Expanded(
                 child: _buildCompactStatCard(
                   icon: Icons.calendar_month,
@@ -140,10 +140,10 @@ class _StatsPageState extends State<StatsPage> with TickerProviderStateMixin {
 
   Widget _buildDailyLoginSection(StatsProvider provider) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: const Color(0xFF1D162B),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
       child: Column(
@@ -152,53 +152,53 @@ class _StatsPageState extends State<StatsPage> with TickerProviderStateMixin {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFF2196F3), Color(0xFF1976D2)],
                   ),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(4),
                 ),
                 child: const Icon(
                   Icons.calendar_today,
                   color: Colors.white,
-                  size: 16,
+                  size: 14,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               const Text(
                 'Activity',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                 decoration: BoxDecoration(
                   color: const Color(0xFF4CAF50).withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
                   '${provider.getActiveDays()} days',
                   style: const TextStyle(
                     color: Color(0xFF4CAF50),
-                    fontSize: 10,
+                    fontSize: 9,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          _buildCompactLoginCalendar(provider),
           const SizedBox(height: 8),
+          _buildCompactLoginCalendar(provider),
+          const SizedBox(height: 6),
           Row(
             children: [
               _buildCompactCalendarLegend('Active', const Color(0xFF4CAF50)),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               _buildCompactCalendarLegend('Inactive', const Color(0xFF2A1F3D)),
             ],
           ),
@@ -234,37 +234,38 @@ class _StatsPageState extends State<StatsPage> with TickerProviderStateMixin {
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: color.withOpacity(0.2)),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(6),
+            padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: color.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(4),
             ),
-            child: Icon(icon, color: color, size: 14),
+            child: Icon(icon, color: color, size: 12),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           Text(
             value,
             style: TextStyle(
               color: color,
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 1),
           Text(
             title,
             style: TextStyle(
               color: color.withOpacity(0.8),
-              fontSize: 10,
+              fontSize: 9,
               fontWeight: FontWeight.w600,
             ),
             textAlign: TextAlign.center,
@@ -287,26 +288,26 @@ class _StatsPageState extends State<StatsPage> with TickerProviderStateMixin {
 
       calendarDays.add(
         Container(
-          width: 8,
-          height: 8,
-          margin: const EdgeInsets.all(1),
+          width: 6,
+          height: 6,
+          margin: const EdgeInsets.all(0.5),
           decoration: BoxDecoration(
             color: isLoggedIn
                 ? const Color(0xFF4CAF50)
                 : const Color(0xFF2A1F3D),
-            borderRadius: BorderRadius.circular(2),
+            borderRadius: BorderRadius.circular(1),
             border: Border.all(
               color: isLoggedIn
                   ? const Color(0xFF4CAF50).withOpacity(0.6)
                   : Colors.white.withOpacity(0.1),
-              width: 0.3,
+              width: 0.2,
             ),
             boxShadow: isLoggedIn
                 ? [
                     BoxShadow(
                       color: const Color(0xFF4CAF50).withOpacity(0.3),
-                      blurRadius: 1,
-                      offset: const Offset(0, 0.5),
+                      blurRadius: 0.5,
+                      offset: const Offset(0, 0.3),
                     ),
                   ]
                 : null,
@@ -319,8 +320,8 @@ class _StatsPageState extends State<StatsPage> with TickerProviderStateMixin {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: 6,
-      mainAxisSpacing: 2,
-      crossAxisSpacing: 2,
+      mainAxisSpacing: 1,
+      crossAxisSpacing: 1,
       childAspectRatio: 1,
       children: calendarDays,
     );
@@ -408,11 +409,11 @@ class _StatsPageState extends State<StatsPage> with TickerProviderStateMixin {
                           ),
                         )
                       : Padding(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(12),
                           child: Column(
                             children: [
                               _buildStatsSection(provider),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: 8),
                               _buildDailyLoginSection(provider),
                             ],
                           ),

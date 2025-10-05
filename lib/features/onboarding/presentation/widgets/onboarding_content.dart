@@ -91,19 +91,6 @@ class OnboardingContent extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
 
-          const SizedBox(height: 16),
-
-          // Description
-          Text(
-            data.description,
-            style: const TextStyle(
-              color: Color(0xFF8C7BA6),
-              fontSize: 16,
-              height: 1.5,
-            ),
-            textAlign: TextAlign.center,
-          ),
-
           const SizedBox(height: 40),
 
           // Action Button

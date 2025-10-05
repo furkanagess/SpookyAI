@@ -4,7 +4,6 @@ import '../../../../core/theme/app_theme.dart';
 import '../widgets/onboarding_content.dart';
 import '../widgets/onboarding_indicator.dart';
 import 'package:spooky_ai/features/home/presentation/pages/main_navigation_page_refactored.dart';
-import '../../../../core/models/paywall_service.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/services/main_navigation_provider.dart';
 
@@ -21,36 +20,26 @@ class _OnboardingPageState extends State<OnboardingPage> {
   static const List<OnboardingData> _onboardingPages = [
     OnboardingData(
       title: '🎃 Welcome to SpookyAI',
-      description:
-          'Transform your photos into spooky Halloween masterpieces with the power of AI!',
       imageAsset: 'assets/images/ghost-face.png',
       icon: '👻',
     ),
     OnboardingData(
       title: '🎨 AI Image Generation',
-      description:
-          'Create spooky scenes from text descriptions or transform your existing photos with Halloween magic.',
       imageAsset: 'assets/images/pumpkin.png',
       icon: '✨',
     ),
     OnboardingData(
       title: '🧠 Prompt Library',
-      description:
-          'Discover curated prompts and save your own favorites. Build better generations faster.',
       imageAsset: 'assets/images/haunted-house.png',
       icon: '📚',
     ),
     OnboardingData(
       title: '🧪 Halloween Prompt Selector',
-      description:
-          'Mix & match setting, lighting and effects to craft perfect spooky prompts.',
       imageAsset: 'assets/images/witch-hat.png',
       icon: '🧩',
     ),
     OnboardingData(
       title: '🚀 Ready to Start?',
-      description:
-          'You\'re all set! Let\'s create some spooky masterpieces together.',
       imageAsset: 'assets/images/spider.png',
       icon: '🚀',
       buttonText: 'Get Started',
