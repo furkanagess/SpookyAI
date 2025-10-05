@@ -106,53 +106,53 @@
     <table style="margin: 0 auto; border-collapse: collapse; background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.1); min-width: 600px;">
     <tr>
       <td style="padding: 12px; text-align: center; background: #f8f9fa; border-right: 1px solid #eee; border-bottom: 1px solid #eee;">
-        <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.28.56.png" alt="Main Screen" width="160" style="border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-        <div style="font-size: 11px; color: #333; margin-top: 8px; font-weight: 600;">🏠 Main Screen</div>
+        <img src="assets/ss/photos.png" alt="Photos & Generate" width="160" style="border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+        <div style="font-size: 11px; color: #333; margin-top: 8px; font-weight: 600;">🏠 Photos & Generate</div>
         <div style="font-size: 10px; color: #666; margin-top: 2px;">Home & Navigation</div>
       </td>
       <td style="padding: 12px; text-align: center; background: #f8f9fa; border-right: 1px solid #eee; border-bottom: 1px solid #eee;">
-        <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.29.08.png" alt="Generation" width="160" style="border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+        <img src="assets/ss/generate.png" alt="Generation" width="160" style="border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
         <div style="font-size: 11px; color: #333; margin-top: 8px; font-weight: 600;">🎨 Generation</div>
         <div style="font-size: 10px; color: #666; margin-top: 2px;">AI Processing</div>
       </td>
       <td style="padding: 12px; text-align: center; background: #f8f9fa; border-bottom: 1px solid #eee;">
-        <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.39.53.png" alt="Upload" width="160" style="border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-        <div style="font-size: 11px; color: #333; margin-top: 8px; font-weight: 600;">📸 Upload</div>
-        <div style="font-size: 10px; color: #666; margin-top: 2px;">Photo Selection</div>
+        <img src="assets/ss/empty_photo.png" alt="Empty State" width="160" style="border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+        <div style="font-size: 11px; color: #333; margin-top: 8px; font-weight: 600;">📸 Empty State</div>
+        <div style="font-size: 10px; color: #666; margin-top: 2px;">First Time Use</div>
       </td>
     </tr>
     <tr>
       <td style="padding: 12px; text-align: center; background: #f8f9fa; border-right: 1px solid #eee; border-bottom: 1px solid #eee;">
-        <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.39.59.png" alt="Prompt Input" width="160" style="border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-        <div style="font-size: 11px; color: #333; margin-top: 8px; font-weight: 600;">✍️ Prompt Input</div>
+        <img src="assets/ss/prompts.png" alt="Prompts" width="160" style="border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+        <div style="font-size: 11px; color: #333; margin-top: 8px; font-weight: 600;">✍️ Prompts</div>
         <div style="font-size: 10px; color: #666; margin-top: 2px;">Text Description</div>
       </td>
       <td style="padding: 12px; text-align: center; background: #f8f9fa; border-right: 1px solid #eee; border-bottom: 1px solid #eee;">
-        <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.07.png" alt="Mode Selection" width="160" style="border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-        <div style="font-size: 11px; color: #333; margin-top: 8px; font-weight: 600;">⚙️ Mode Selection</div>
-        <div style="font-size: 10px; color: #666; margin-top: 2px;">Generation Options</div>
+        <img src="assets/ss/splash.png" alt="Splash Screen" width="160" style="border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+        <div style="font-size: 11px; color: #333; margin-top: 8px; font-weight: 600;">🚀 Splash</div>
+        <div style="font-size: 10px; color: #666; margin-top: 2px;">App Launch</div>
       </td>
       <td style="padding: 12px; text-align: center; background: #f8f9fa; border-bottom: 1px solid #eee;">
-        <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.23.png" alt="Generation Process" width="160" style="border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-        <div style="font-size: 11px; color: #333; margin-top: 8px; font-weight: 600;">🔄 Processing</div>
-        <div style="font-size: 10px; color: #666; margin-top: 2px;">AI at Work</div>
+        <img src="assets/ss/spin.png" alt="Daily Spin" width="160" style="border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+        <div style="font-size: 11px; color: #333; margin-top: 8px; font-weight: 600;">🎰 Daily Spin</div>
+        <div style="font-size: 10px; color: #666; margin-top: 2px;">Free Tokens</div>
       </td>
     </tr>
     <tr>
       <td style="padding: 12px; text-align: center; background: #f8f9fa; border-right: 1px solid #eee;">
-        <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.40.38.png" alt="Generated Image" width="160" style="border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+        <img src="assets/ss/generated_photo.png" alt="Generated Photo" width="160" style="border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
         <div style="font-size: 11px; color: #333; margin-top: 8px; font-weight: 600;">✨ Generated</div>
         <div style="font-size: 10px; color: #666; margin-top: 2px;">Final Result</div>
       </td>
       <td style="padding: 12px; text-align: center; background: #f8f9fa; border-right: 1px solid #eee;">
-        <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.43.28.png" alt="Gallery View" width="160" style="border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-        <div style="font-size: 11px; color: #333; margin-top: 8px; font-weight: 600;">🖼️ Gallery</div>
-        <div style="font-size: 10px; color: #666; margin-top: 2px;">Your Creations</div>
+        <img src="assets/ss/statistics.png" alt="Statistics" width="160" style="border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+        <div style="font-size: 11px; color: #333; margin-top: 8px; font-weight: 600;">📊 Statistics</div>
+        <div style="font-size: 10px; color: #666; margin-top: 2px;">User Insights</div>
       </td>
       <td style="padding: 12px; text-align: center; background: #f8f9fa;">
-        <img src="assets/ss/Simulator Screenshot - 16plus - 2025-09-30 at 22.43.32.png" alt="Settings" width="160" style="border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-        <div style="font-size: 11px; color: #333; margin-top: 8px; font-weight: 600;">⚙️ Settings</div>
-        <div style="font-size: 10px; color: #666; margin-top: 2px;">App Configuration</div>
+        <img src="assets/ss/profile.png" alt="Profile" width="160" style="border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+        <div style="font-size: 11px; color: #333; margin-top: 8px; font-weight: 600;">👤 Profile</div>
+        <div style="font-size: 10px; color: #666; margin-top: 2px;">User Settings</div>
       </td>
     </tr>
   </table>
