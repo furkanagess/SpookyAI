@@ -198,12 +198,12 @@ class InAppPurchaseService {
 
   static Future<bool> purchaseProduct(String productId) async {
     if (!_isAvailable) {
-      debugPrint('In-app purchase not available');
+      debugPrint('InAppPurchaseService: In-app purchase not available');
       return false;
     }
 
     if (_purchasePending) {
-      debugPrint('Purchase already in progress');
+      debugPrint('InAppPurchaseService: Purchase already in progress');
       return false;
     }
 
@@ -212,18 +212,23 @@ class InAppPurchaseService {
     try {
       product = _products.firstWhere((p) => p.id == productId);
     } catch (e) {
-      debugPrint('Product $productId not found in loaded products');
       debugPrint(
-        'Available products: ${_products.map((p) => p.id).join(', ')}',
+        'InAppPurchaseService: Product $productId not found in loaded products',
+      );
+      debugPrint(
+        'InAppPurchaseService: Available products: ${_products.map((p) => p.id).join(', ')}',
       );
       return false;
     }
 
-    // Product is guaranteed to be non-null here due to firstWhere logic above
-
     debugPrint(
-      'Initiating purchase for product: ${product.id} - ${product.title}',
+      'InAppPurchaseService: Initiating purchase for product: ${product.id} - ${product.title}',
     );
+    debugPrint('InAppPurchaseService: Product price: ${product.price}');
+    debugPrint(
+      'InAppPurchaseService: Product currency: ${product.currencyCode}',
+    );
+
     _purchasePending = true;
     _lastPurchaseSuccess = false;
 
@@ -234,8 +239,14 @@ class InAppPurchaseService {
 
       final bool isPremium = productId == 'spookyai_premium';
       debugPrint(
-        'Purchase type: ${isPremium ? 'Non-consumable (Premium)' : 'Consumable (Tokens)'}',
+        'InAppPurchaseService: Purchase type: ${isPremium ? 'Non-consumable (Premium)' : 'Consumable (Tokens)'}',
       );
+
+      // iOS-specific validation
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        debugPrint('InAppPurchaseService: iOS platform detected');
+        // Additional iOS validation can be added here
+      }
 
       final bool success = isPremium
           ? await _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam)
@@ -247,31 +258,56 @@ class InAppPurchaseService {
       if (!success) {
         _purchasePending = false;
         debugPrint(
-          'Purchase failed to initiate - buy${isPremium ? 'NonConsumable' : 'Consumable'} returned false',
+          'InAppPurchaseService: Purchase failed to initiate - buy${isPremium ? 'NonConsumable' : 'Consumable'} returned false',
         );
         return false;
       }
 
-      debugPrint('Purchase initiated successfully, waiting for completion...');
+      debugPrint(
+        'InAppPurchaseService: Purchase initiated successfully, waiting for completion...',
+      );
       // Wait for purchase completion
       return await _waitForPurchaseCompletion();
     } catch (e) {
       _purchasePending = false;
-      debugPrint('Error initiating purchase: $e');
+      debugPrint('InAppPurchaseService: Error initiating purchase: $e');
+      debugPrint('InAppPurchaseService: Error type: ${e.runtimeType}');
       return false;
     }
   }
 
   static Future<bool> _waitForPurchaseCompletion() async {
-    // Wait for purchase to complete (max 30 seconds)
+    // Wait for purchase to complete (max 60 seconds for iOS)
     int attempts = 0;
-    const int maxAttempts = 30; // 30 seconds max wait
+    const int maxAttempts = 60; // 60 seconds max wait for iOS
+
+    debugPrint('InAppPurchaseService: Waiting for purchase completion...');
 
     while (_purchasePending && attempts < maxAttempts) {
-      await Future.delayed(const Duration(seconds: 1));
+      await Future.delayed(
+        const Duration(milliseconds: 500),
+      ); // Check every 500ms
       attempts++;
+
+      if (attempts % 10 == 0) {
+        // Log every 5 seconds
+        debugPrint(
+          'InAppPurchaseService: Still waiting for purchase completion... (${attempts * 500}ms)',
+        );
+      }
     }
 
+    if (attempts >= maxAttempts) {
+      debugPrint(
+        'InAppPurchaseService: Purchase completion timeout after ${maxAttempts * 500}ms',
+      );
+      _purchasePending = false;
+      return false;
+    }
+
+    debugPrint(
+      'InAppPurchaseService: Purchase completion result: $_lastPurchaseSuccess',
+    );
     return _lastPurchaseSuccess;
   }
 
@@ -287,36 +323,47 @@ class InAppPurchaseService {
     debugPrint(
       'Handling purchase: ${purchaseDetails.productID} - Status: ${purchaseDetails.status}',
     );
+    debugPrint('Purchase pending: $_purchasePending');
+    debugPrint('Purchase ID: ${purchaseDetails.purchaseID}');
+    debugPrint('Transaction date: ${purchaseDetails.transactionDate}');
 
     if (purchaseDetails.status == PurchaseStatus.purchased) {
       debugPrint(
         'Purchase successful for product: ${purchaseDetails.productID}',
       );
 
-      // Grant tokens based on product ID
-      final int? tokens = _productTokenMap[purchaseDetails.productID];
-      if (tokens != null) {
-        await TokenService.addTokens(tokens);
-        debugPrint(
-          'Added $tokens tokens for purchase ${purchaseDetails.productID}',
-        );
-      } else if (purchaseDetails.productID == 'spookyai_premium') {
-        // Premium subscription purchase
-        debugPrint('Activating premium subscription');
-        await PremiumService.activatePremiumSubscription();
-      } else {
-        debugPrint('Unknown product ID: ${purchaseDetails.productID}');
-      }
+      try {
+        // Grant tokens based on product ID
+        final int? tokens = _productTokenMap[purchaseDetails.productID];
+        if (tokens != null) {
+          await TokenService.addTokens(tokens);
+          debugPrint(
+            'Added $tokens tokens for purchase ${purchaseDetails.productID}',
+          );
+        } else if (purchaseDetails.productID == 'spookyai_premium') {
+          // Premium subscription purchase
+          debugPrint('Activating premium subscription');
+          await PremiumService.activatePremiumSubscription();
+        } else {
+          debugPrint('Unknown product ID: ${purchaseDetails.productID}');
+        }
 
-      // Complete the purchase
-      if (purchaseDetails.pendingCompletePurchase) {
-        debugPrint('Completing purchase for ${purchaseDetails.productID}');
-        await _inAppPurchase.completePurchase(purchaseDetails);
-      }
+        // Complete the purchase
+        if (purchaseDetails.pendingCompletePurchase) {
+          debugPrint('Completing purchase for ${purchaseDetails.productID}');
+          await _inAppPurchase.completePurchase(purchaseDetails);
+          debugPrint('Purchase completed successfully');
+        } else {
+          debugPrint('Purchase does not require completion');
+        }
 
-      // Mark purchase as successful
-      _lastPurchaseSuccess = true;
-      debugPrint('Purchase marked as successful');
+        // Mark purchase as successful
+        _lastPurchaseSuccess = true;
+        debugPrint('Purchase marked as successful');
+      } catch (e) {
+        debugPrint('Error processing successful purchase: $e');
+        _lastPurchaseSuccess = false;
+      }
     } else if (purchaseDetails.status == PurchaseStatus.error) {
       debugPrint(
         'Purchase error for ${purchaseDetails.productID}: ${purchaseDetails.error}',
@@ -338,6 +385,7 @@ class InAppPurchaseService {
       _lastPurchaseSuccess = true;
     }
 
+    // Always set purchase pending to false when handling is complete
     _purchasePending = false;
     debugPrint('Purchase handling completed for ${purchaseDetails.productID}');
   }
@@ -402,6 +450,24 @@ class InAppPurchaseService {
   static bool isProductAvailable(String productId) {
     return _products.any((product) => product.id == productId);
   }
+
+  // Reset purchase state (useful for debugging)
+  static void resetPurchaseState() {
+    debugPrint('InAppPurchaseService: Resetting purchase state');
+    _purchasePending = false;
+    _lastPurchaseSuccess = false;
+  }
+
+  // Get current purchase state for debugging
+  static Map<String, dynamic> getPurchaseState() {
+    return {
+      'isAvailable': _isAvailable,
+      'purchasePending': _purchasePending,
+      'lastPurchaseSuccess': _lastPurchaseSuccess,
+      'productsLoaded': _products.length,
+      'queryError': _queryProductError,
+    };
+  }
 }
 
 // iOS StoreKit delegate
@@ -411,11 +477,19 @@ class ExamplePaymentQueueDelegate implements SKPaymentQueueDelegateWrapper {
     SKPaymentTransactionWrapper transaction,
     SKStorefrontWrapper storefront,
   ) {
+    debugPrint('InAppPurchaseService: shouldContinueTransaction called');
+    debugPrint(
+      'InAppPurchaseService: Transaction ID: ${transaction.transactionIdentifier}',
+    );
+    debugPrint(
+      'InAppPurchaseService: Product ID: ${transaction.payment.productIdentifier}',
+    );
     return true;
   }
 
   @override
   bool shouldShowPriceConsent() {
+    debugPrint('InAppPurchaseService: shouldShowPriceConsent called');
     return false;
   }
 }

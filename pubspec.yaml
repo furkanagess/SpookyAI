@@ -7,7 +7,7 @@ publish_to: 'none'
 # Minor: New features, backward compatible  
 # Patch: Bug fixes, backward compatible
 # Build: Incremental build number
-version: 1.0.0+8
+version: 1.0.0+9
 
 environment:
   sdk: ^3.10.0-158.0.dev
@@ -52,6 +52,9 @@ dependencies:
   
   # Quick Actions (App Shortcuts)
   quick_actions: ^1.1.0
+  
+  # URL Launcher
+  url_launcher: ^6.2.4
 
 # Development Dependencies
 dev_dependencies:

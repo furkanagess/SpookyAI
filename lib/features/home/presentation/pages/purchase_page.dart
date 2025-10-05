@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/services/token_provider.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/services/purchase_provider.dart';
@@ -8,6 +9,7 @@ import '../../../../core/services/in_app_purchase_service.dart';
 import '../../../../core/utils/platform_utils.dart';
 import '../widgets/purchase_success_dialog.dart';
 import '../widgets/purchase_failed_dialog.dart';
+import '../widgets/subscription_info_dialog.dart';
 
 class PurchasePage extends StatefulWidget {
   const PurchasePage();
@@ -105,92 +107,6 @@ class _PurchasePageState extends State<PurchasePage> {
     }
   }
 
-  Future<void> _showDebugInfo(
-    BuildContext context,
-    PurchaseProvider provider,
-  ) async {
-    // Print debug info to console
-    InAppPurchaseService.debugServiceStatus();
-
-    // Show debug dialog
-    if (!context.mounted) return;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Debug Info'),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Platform: ${defaultTargetPlatform.name}'),
-              Text('Platform Utils: ${PlatformUtils.platformName}'),
-              Text('Is Android: ${PlatformUtils.isAndroid}'),
-              Text('Is iOS: ${PlatformUtils.isIOS}'),
-              Text('Billing Available: ${InAppPurchaseService.isAvailable}'),
-              Text('Products Loaded: ${InAppPurchaseService.products.length}'),
-              Text(
-                'Query Error: ${InAppPurchaseService.queryProductError ?? 'None'}',
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Available Products:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              ...InAppPurchaseService.products.map(
-                (product) => Text(
-                  '• ${product.id}: ${product.title} (${product.price})',
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Expected Products:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Text(
-                PlatformUtils.isAndroid
-                    ? '• Android: 1_token, 10_token, 25_token, 60_token, 150_token, spookyai_premium'
-                    : '• iOS: 1_token, 10_token, 25_token, 60_token, 150_token, spookyai_premium (App Store Connect)',
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Current Packages:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Text(
-                'Platform: ${PlatformUtils.isAndroid ? 'Android' : 'iOS'} (${provider.packs.length} packages)',
-                style: const TextStyle(fontStyle: FontStyle.italic),
-              ),
-              const SizedBox(height: 8),
-              ...provider.packs.map(
-                (pack) => Text(
-                  '• ${pack.name}: ${PlatformUtils.isIOS ? pack.realPrice : '${PlatformUtils.isAndroid ? 'TRY' : '\$'}${pack.price}'} (${pack.tokens} tokens) - ${_pricePerToken(pack, provider)}',
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              await InAppPurchaseService.forceReloadProducts();
-              if (context.mounted) {
-                Navigator.of(context).pop();
-                _showDebugInfo(context, provider);
-              }
-            },
-            child: const Text('Reload Products'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Consumer<PurchaseProvider>(
@@ -278,8 +194,33 @@ class _PurchasePageState extends State<PurchasePage> {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                   child: ListView.builder(
-                    itemCount: provider.packs.length,
+                    itemCount: provider.packs.length + 1, // +1 for legal links
                     itemBuilder: (context, index) {
+                      // If this is the last item, show legal links
+                      if (index == provider.packs.length) {
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 16, bottom: 20),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              _buildLegalLink(
+                                'Terms of Use',
+                                'https://github.com/furkanagess/SpookyAI/blob/main/TERMS_OF_USE.md',
+                              ),
+                              const Text(
+                                ' • ',
+                                style: TextStyle(color: Color(0xFF8C7BA6)),
+                              ),
+                              _buildLegalLink(
+                                'Privacy Policy',
+                                'https://github.com/furkanagess/SpookyAI/blob/main/PRIVACY_POLICY.md',
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      // Regular pack items
                       final pack = provider.packs[index];
                       final bool selected = provider.selectedIndex == index;
 
@@ -288,7 +229,7 @@ class _PurchasePageState extends State<PurchasePage> {
                           top: index == 0
                               ? 8
                               : 0, // Reduced padding for first item (premium)
-                          bottom: index == provider.packs.length - 1 ? 0 : 16,
+                          bottom: 16,
                         ),
                         child: GestureDetector(
                           onTap: !provider.canSelectPack(pack)
@@ -355,6 +296,23 @@ class _PurchasePageState extends State<PurchasePage> {
         );
       },
     );
+  }
+
+  Widget _buildLegalLink(String text, String url) {
+    return InkWell(
+      onTap: () => _launchURL(url),
+      child: Text(
+        text,
+        style: const TextStyle(color: Color(0xFFFF6A00), fontSize: 12),
+      ),
+    );
+  }
+
+  Future<void> _launchURL(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 }
 
@@ -785,7 +743,7 @@ class _PremiumSubscriptionCard extends StatelessWidget {
                               fontSize: isPremiumUser ? 14 : 20,
                             ),
                           ),
-                          if (!isPremiumUser)
+                          if (!isPremiumUser) ...[
                             const Text(
                               '/month',
                               style: TextStyle(
@@ -793,6 +751,16 @@ class _PremiumSubscriptionCard extends StatelessWidget {
                                 fontSize: 10,
                               ),
                             ),
+                            const SizedBox(height: 2),
+                            const Text(
+                              'Auto-renewable',
+                              style: TextStyle(
+                                color: Color(0xFF8C7BA6),
+                                fontSize: 9,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ],
