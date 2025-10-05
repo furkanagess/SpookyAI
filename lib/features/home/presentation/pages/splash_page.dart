@@ -4,6 +4,8 @@ import 'package:spooky_ai/features/home/presentation/pages/main_navigation_page_
 
 import '../../../onboarding/presentation/pages/onboarding_page.dart';
 import '../../../../core/models/onboarding_data.dart';
+import '../../../../core/services/quick_actions_service.dart';
+import 'dont_delete_page.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -29,6 +31,14 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
 
   Future<void> _checkOnboardingAndNavigate() async {
     if (!mounted) return;
+
+    // Check if app was launched via quick action
+    if (QuickActionsService.shouldShowDontDeleteMessage) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const DontDeletePage()),
+      );
+      return;
+    }
 
     final bool isOnboardingCompleted =
         await OnboardingService.isOnboardingCompleted();

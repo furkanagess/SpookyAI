@@ -5,6 +5,7 @@ import '../../../../core/services/token_provider.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/services/purchase_provider.dart';
 import '../../../../core/services/in_app_purchase_service.dart';
+import '../../../../core/utils/platform_utils.dart';
 import '../widgets/purchase_success_dialog.dart';
 import '../widgets/purchase_failed_dialog.dart';
 
@@ -124,6 +125,9 @@ class _PurchasePageState extends State<PurchasePage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text('Platform: ${defaultTargetPlatform.name}'),
+              Text('Platform Utils: ${PlatformUtils.platformName}'),
+              Text('Is Android: ${PlatformUtils.isAndroid}'),
+              Text('Is iOS: ${PlatformUtils.isIOS}'),
               Text('Billing Available: ${InAppPurchaseService.isAvailable}'),
               Text('Products Loaded: ${InAppPurchaseService.products.length}'),
               Text(
@@ -144,8 +148,25 @@ class _PurchasePageState extends State<PurchasePage> {
                 'Expected Products:',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
+              Text(
+                PlatformUtils.isAndroid
+                    ? '• Android: 1_token, 10_token, 25_token, 60_token, 150_token, spookyai_premium'
+                    : '• iOS: 1_token, 10_token, 25_token, 60_token, 150_token, spookyai_premium (App Store Connect)',
+              ),
+              const SizedBox(height: 16),
               const Text(
-                '• 1_token, 10_token, 25_token, 60_token, 150_token, spookyai_premium',
+                'Current Packages:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Text(
+                'Platform: ${PlatformUtils.isAndroid ? 'Android' : 'iOS'} (${provider.packs.length} packages)',
+                style: const TextStyle(fontStyle: FontStyle.italic),
+              ),
+              const SizedBox(height: 8),
+              ...provider.packs.map(
+                (pack) => Text(
+                  '• ${pack.name}: ${PlatformUtils.isIOS ? pack.realPrice : '${PlatformUtils.isAndroid ? 'TRY' : '\$'}${pack.price}'} (${pack.tokens} tokens) - ${_pricePerToken(pack, provider)}',
+                ),
               ),
             ],
           ),
@@ -176,25 +197,19 @@ class _PurchasePageState extends State<PurchasePage> {
       builder: (context, provider, child) {
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Packages'),
+            title: Column(children: [const Text('Packages')]),
             backgroundColor: const Color(0xFF0F0B1A),
             elevation: 0,
             actions: [
-              // Debug Button (only in debug mode)
-              if (kDebugMode)
+              // Restore Purchases Button (iOS only)
+              if (PlatformUtils.isIOS)
                 IconButton(
-                  onPressed: () => _showDebugInfo(context, provider),
-                  icon: const Icon(Icons.bug_report),
-                  tooltip: 'Debug Info',
+                  onPressed: provider.isLoading
+                      ? null
+                      : () => _restorePurchases(provider),
+                  icon: const Icon(Icons.restore),
+                  tooltip: 'Restore Purchases',
                 ),
-              // Restore Purchases Button
-              IconButton(
-                onPressed: provider.isLoading
-                    ? null
-                    : () => _restorePurchases(provider),
-                icon: const Icon(Icons.restore),
-                tooltip: 'Restore Purchases',
-              ),
               // Token Balance
               Padding(
                 padding: const EdgeInsets.symmetric(
@@ -329,7 +344,11 @@ class _PurchasePageState extends State<PurchasePage> {
                           ),
                         ),
                       )
-                    : const Text('Purchase Selected Pack'),
+                    : Text(
+                        provider.selectedIndex != null
+                            ? 'Purchase ${provider.packs[provider.selectedIndex!].name}'
+                            : 'Select a Pack',
+                      ),
               ),
             ),
           ),
@@ -342,7 +361,30 @@ class _PurchasePageState extends State<PurchasePage> {
 // Legacy chip removed
 
 String _pricePerToken(Pack p, PurchaseProvider provider) {
-  return provider.getPricePerToken(p);
+  // Get the price that's displayed above
+  final String displayedPrice = PlatformUtils.isIOS
+      ? p.realPrice
+      : '${PlatformUtils.isAndroid ? 'TRY' : '\$'}${p.price}';
+
+  // Extract numeric value from the displayed price
+  String numericPrice = displayedPrice;
+  if (PlatformUtils.isAndroid) {
+    // Remove "TRY" prefix and clean up
+    numericPrice = displayedPrice.replaceAll('TRY', '').trim();
+  } else {
+    // Remove "$" prefix and clean up
+    numericPrice = displayedPrice.replaceAll('\$', '').trim();
+  }
+
+  // Parse the numeric value
+  final double total = double.tryParse(numericPrice) ?? 0;
+
+  if (p.tokens == 0 || total == 0) return '-';
+
+  final double per = total / p.tokens;
+  final String currency = PlatformUtils.isAndroid ? 'TRY' : 'USD';
+
+  return '${per.toStringAsFixed(2)} $currency/token';
 }
 
 class _SelectablePackRow extends StatelessWidget {
@@ -420,7 +462,9 @@ class _SelectablePackRow extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Text(
-                                '\$${pack.price}',
+                                PlatformUtils.isIOS
+                                    ? pack.realPrice
+                                    : '${PlatformUtils.isAndroid ? 'TRY' : '\$'}${pack.price}',
                                 style: const TextStyle(
                                   color: Color(0xFFFF6A00),
                                   fontWeight: FontWeight.w800,
@@ -728,7 +772,11 @@ class _PremiumSubscriptionCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            isPremiumUser ? 'ACTIVE' : '\$${pack.price}',
+                            isPremiumUser
+                                ? 'ACTIVE'
+                                : PlatformUtils.isIOS
+                                ? pack.realPrice
+                                : '${PlatformUtils.isAndroid ? 'TRY' : '\$'}${pack.price}',
                             style: TextStyle(
                               color: isPremiumUser
                                   ? const Color(0xFF4CAF50)

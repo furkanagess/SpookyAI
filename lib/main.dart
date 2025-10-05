@@ -15,12 +15,16 @@ import 'core/services/add_prompt_provider.dart';
 import 'core/services/halloween_prompt_provider.dart';
 import 'core/services/prompt_input_provider.dart';
 import 'core/services/in_app_purchase_service.dart';
+import 'core/services/quick_actions_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize in-app purchase service
   await InAppPurchaseService.initialize();
+
+  // Initialize quick actions
+  await QuickActionsService.initialize();
 
   runApp(const GhostfaceApp());
 }

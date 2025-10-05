@@ -903,14 +903,6 @@ class _PromptsPageState extends State<PromptsPage>
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              const SizedBox(height: 4),
-                              const Text(
-                                'Tap to upgrade',
-                                style: TextStyle(
-                                  color: Color(0xFF8C7BA6),
-                                  fontSize: 12,
-                                ),
-                              ),
                             ],
                           ),
                         ),

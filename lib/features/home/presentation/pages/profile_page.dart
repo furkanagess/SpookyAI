@@ -970,19 +970,19 @@ class _ProfilePageState extends State<ProfilePage>
             toolbarHeight: AppMetrics.toolbarHeight,
             actions: [
               // Premium toggle button
-              // Container(
-              //   margin: const EdgeInsets.only(right: 8),
-              //   child: IconButton(
-              //     onPressed: _openPremiumTesterMenu,
-              //     icon: Icon(
-              //       provider.isPremium ? Icons.star : Icons.star_border,
-              //       color: provider.isPremium
-              //           ? const Color(0xFFFF6A00)
-              //           : Colors.white,
-              //     ),
-              //     tooltip: 'Premium Tester',
-              //   ),
-              // ),
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                child: IconButton(
+                  onPressed: _openPremiumTesterMenu,
+                  icon: Icon(
+                    provider.isPremium ? Icons.star : Icons.star_border,
+                    color: provider.isPremium
+                        ? const Color(0xFFFF6A00)
+                        : Colors.white,
+                  ),
+                  tooltip: 'Premium Tester',
+                ),
+              ),
               TokenDisplayWidget(
                 onTap: () async {
                   await Navigator.of(context).push(

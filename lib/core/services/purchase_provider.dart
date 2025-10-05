@@ -2,6 +2,9 @@ import 'package:flutter/foundation.dart';
 import '../services/token_service.dart';
 import '../services/premium_service.dart';
 import '../services/in_app_purchase_service.dart';
+import '../services/android_purchase_service.dart';
+import '../services/ios_purchase_service.dart';
+import '../utils/platform_utils.dart';
 
 class Pack {
   const Pack({
@@ -24,6 +27,12 @@ class Pack {
   final bool whiteTint;
   final bool isPremium;
   final List<String> features;
+
+  // Get real price from InAppPurchaseService
+  String get realPrice {
+    final product = InAppPurchaseService.getProductById(productId);
+    return product?.price ?? price;
+  }
 }
 
 class PurchaseProvider extends ChangeNotifier {
@@ -76,68 +85,13 @@ class PurchaseProvider extends ChangeNotifier {
   }
 
   void _initializePacks() {
-    _packs = [
-      // Premium Subscription Package (at the top)
-      const Pack(
-        name: 'SpookyAI Premium',
-        tokens: 20,
-        productId: 'spookyai_premium',
-        price: '4.99',
-        note: 'Monthly subscription with exclusive benefits',
-        imageAsset: 'assets/images/ghost-face.png',
-        whiteTint: true,
-        isPremium: true,
-        features: [
-          '20 tokens per month',
-          'Access to all prompts',
-          'Daily token spin wheel',
-          'Priority AI processing',
-        ],
-      ),
-      // Token Packs - Updated with correct Play Console product IDs
-      const Pack(
-        name: '1 Token',
-        tokens: 1,
-        productId: '1_token',
-        price: '0.49',
-        note: 'Quick pack for a single image',
-        imageAsset: 'assets/images/spider.png',
-        whiteTint: true,
-      ),
-      const Pack(
-        name: '10 Token',
-        tokens: 10,
-        productId: '10_token',
-        price: '2.99',
-        note: 'Great for small trials 🎃',
-        imageAsset: 'assets/images/pumpkin.png',
-      ),
-      const Pack(
-        name: '25 Token',
-        tokens: 25,
-        productId: '25_token',
-        price: '5.99',
-        note: 'Most popular choice 👻',
-        imageAsset: 'assets/images/haunted-house.png',
-      ),
-      const Pack(
-        name: '60 Token',
-        tokens: 60,
-        productId: '60_token',
-        price: '11.99',
-        note: 'For regular creators 🧙',
-        imageAsset: 'assets/images/witch-hat.png',
-      ),
-      const Pack(
-        name: '150 Token',
-        tokens: 150,
-        productId: '150_token',
-        price: '24.99',
-        note: 'For power users 💀',
-        imageAsset: 'assets/images/ghost-face.png',
-        whiteTint: true,
-      ),
-    ];
+    if (PlatformUtils.isAndroid) {
+      _packs = AndroidPurchaseService.getAndroidPacks();
+      AndroidPurchaseService.debugAndroidPacks();
+    } else {
+      _packs = IOSPurchaseService.getIOSPacks();
+      IOSPurchaseService.debugIOSPacks();
+    }
     notifyListeners();
   }
 
@@ -269,10 +223,11 @@ class PurchaseProvider extends ChangeNotifier {
 
   // Get price per token for a pack
   String getPricePerToken(Pack pack) {
-    final double total = double.tryParse(pack.price) ?? 0;
-    if (pack.tokens == 0) return '-';
-    final double per = total / pack.tokens;
-    return '${per.toStringAsFixed(2)} USD/token';
+    if (PlatformUtils.isAndroid) {
+      return AndroidPurchaseService.getPricePerToken(pack);
+    } else {
+      return IOSPurchaseService.getPricePerToken(pack);
+    }
   }
 
   // Test method to verify purchase setup
