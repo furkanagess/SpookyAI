@@ -160,6 +160,10 @@ class PurchaseProvider extends ChangeNotifier {
         pack.productId,
       );
 
+      debugPrint(
+        'PurchaseProvider: Purchase result for ${pack.name}: $success',
+      );
+
       if (success) {
         debugPrint('PurchaseProvider: Purchase successful for ${pack.name}');
 
@@ -180,6 +184,17 @@ class PurchaseProvider extends ChangeNotifier {
         debugPrint(
           'PurchaseProvider: Query error: ${InAppPurchaseService.queryProductError}',
         );
+        debugPrint(
+          'PurchaseProvider: Last purchase success: ${InAppPurchaseService.lastPurchaseSuccess}',
+        );
+
+        // Additional debugging for iOS
+        if (defaultTargetPlatform == TargetPlatform.iOS) {
+          debugPrint(
+            'PurchaseProvider: iOS platform - checking for timeout or user cancellation',
+          );
+        }
+
         return false;
       }
     } catch (e) {

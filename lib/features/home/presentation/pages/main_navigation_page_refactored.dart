@@ -16,7 +16,6 @@ import 'prompts_page.dart';
 import 'profile_page.dart';
 import '../../domain/generation_mode.dart';
 import '../widgets/prompt_input_widget.dart';
-import '../widgets/image_upload_widget.dart';
 import '../widgets/generation_progress_dialog.dart';
 import '../widgets/paywall_dialog.dart';
 import '../../../../core/models/paywall_service.dart';
@@ -339,22 +338,11 @@ class _MainNavigationPageRefactoredState
         }
       }
 
-      if (provider.uploadedImage != null) {
-        // Standard image-to-image
-        resultBytes = await _stability.generateImageFromImage(
-          prompt: provider.prompt,
-          imageBytes: provider.uploadedImage!,
-          imageStrength: 0.75,
-          cfgScale: 7,
-          onCancel: checkCancellation,
-        );
-      } else {
-        // Standard text-to-image
-        resultBytes = await _stability.generateImageBytes(
-          prompt: provider.prompt,
-          onCancel: checkCancellation,
-        );
-      }
+      // Standard text-to-image only
+      resultBytes = await _stability.generateImageBytes(
+        prompt: provider.prompt,
+        onCancel: checkCancellation,
+      );
 
       // Check if generation was cancelled
       if (isCancelled) {
@@ -508,10 +496,8 @@ class _MainNavigationPageRefactoredState
       await context.read<SavedImagesProvider>().addSavedImage(
         imageBytes: imageBytes,
         prompt: provider.prompt,
-        isImageToImage: provider.activeMode == GenerationMode.image,
-        originalImagePath: provider.uploadedImage != null
-            ? 'uploaded_image'
-            : null,
+        isImageToImage: false,
+        originalImagePath: null,
       );
 
       if (mounted) {
@@ -882,71 +868,27 @@ class _MainNavigationPageRefactoredState
                                   child: AnimatedContainer(
                                     duration: const Duration(milliseconds: 300),
                                     curve: Curves.easeInOut,
-                                    height:
-                                        provider.activeMode ==
-                                            GenerationMode.image
-                                        ? 140
-                                        : 0,
+                                    height: 0,
                                     child: AnimatedOpacity(
                                       duration: const Duration(
                                         milliseconds: 300,
                                       ),
                                       curve: Curves.easeInOut,
-                                      opacity:
-                                          provider.activeMode ==
-                                              GenerationMode.image
-                                          ? 1.0
-                                          : 0.0,
-                                      child:
-                                          provider.activeMode ==
-                                              GenerationMode.image
-                                          ? Container(
-                                              constraints: const BoxConstraints(
-                                                maxHeight: 120,
-                                              ),
-                                              child: ImageUploadWidget(
-                                                onImageSelected: (imageBytes) {
-                                                  provider.setUploadedImage(
-                                                    imageBytes,
-                                                  );
-                                                },
-                                                onImageRemoved: () {
-                                                  provider
-                                                      .removeUploadedImage();
-                                                },
-                                                uploadedImage:
-                                                    provider.uploadedImage,
-                                              ),
-                                            )
-                                          : const SizedBox.shrink(),
+                                      opacity: 0.0,
+                                      child: const SizedBox.shrink(),
                                     ),
                                   ),
                                 ),
 
-                                // Dynamic spacing based on mode
-                                SizedBox(
-                                  height:
-                                      provider.activeMode ==
-                                          GenerationMode.image
-                                      ? 16
-                                      : 8,
-                                ),
+                                // Spacing
+                                const SizedBox(height: 8),
                                 // Prompt input
                                 PromptInputWidget(
                                   onPromptChanged: (prompt) {
                                     provider.updatePrompt(prompt);
                                   },
-                                  hintText:
-                                      provider.activeMode == GenerationMode.text
-                                      ? 'Describe your Halloween scene...'
-                                      : 'Describe how to transform into Halloween style...',
-                                  initialText:
-                                      provider.activeMode ==
-                                          GenerationMode.image
-                                      ? (provider.uploadedImage != null
-                                            ? 'use this image: detailed transformation to spooky cinematic style'
-                                            : provider.prompt)
-                                      : provider.prompt,
+                                  hintText: 'Describe your Halloween scene...',
+                                  initialText: provider.prompt,
                                 ),
                                 const SizedBox(height: 16),
 
@@ -1030,18 +972,20 @@ class _MainNavigationPageRefactoredState
       ),
       child: Row(
         children: [
-          // Image to Image Mode
+          // Image to Image Mode (Coming Soon)
           Expanded(
             child: _buildModeCard(
               mode: GenerationMode.image,
               icon: Icons.image_rounded,
               title: 'Image to Image',
+              subtitle: 'Coming Soon',
               gradient: const LinearGradient(
                 colors: [Color(0xFF06B6D4), Color(0xFF0891B2)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               provider: provider,
+              isDisabled: true,
             ),
           ),
           const SizedBox(width: 6),
@@ -1051,12 +995,14 @@ class _MainNavigationPageRefactoredState
               mode: GenerationMode.text,
               icon: Icons.text_fields_rounded,
               title: 'Text to Image',
+              subtitle: null,
               gradient: const LinearGradient(
                 colors: [Color(0xFFB25AFF), Color(0xFF8B5CF6)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               provider: provider,
+              isDisabled: false,
             ),
           ),
         ],
@@ -1068,15 +1014,17 @@ class _MainNavigationPageRefactoredState
     required GenerationMode mode,
     required IconData icon,
     required String title,
+    String? subtitle,
     required Gradient gradient,
     required MainNavigationProvider provider,
+    required bool isDisabled,
   }) {
     final isSelected = provider.activeMode == mode;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => provider.switchMode(mode),
+        onTap: isDisabled ? null : () => provider.switchMode(mode),
         borderRadius: BorderRadius.circular(20),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
@@ -1084,15 +1032,19 @@ class _MainNavigationPageRefactoredState
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
-            gradient: isSelected ? gradient : null,
-            color: isSelected ? null : Colors.transparent,
+            gradient: isSelected && !isDisabled ? gradient : null,
+            color: isSelected && !isDisabled
+                ? null
+                : (isDisabled
+                      ? Colors.grey.withOpacity(0.2)
+                      : Colors.transparent),
             border: Border.all(
-              color: isSelected
+              color: isSelected && !isDisabled
                   ? Colors.white.withOpacity(0.2)
                   : Colors.transparent,
               width: 1,
             ),
-            boxShadow: isSelected
+            boxShadow: isSelected && !isDisabled
                 ? [
                     BoxShadow(
                       color: gradient.colors.first.withOpacity(0.25),
@@ -1111,27 +1063,57 @@ class _MainNavigationPageRefactoredState
                 width: 24,
                 height: 24,
                 decoration: BoxDecoration(
-                  color: isSelected
+                  color: isSelected && !isDisabled
                       ? Colors.white.withOpacity(0.15)
-                      : gradient.colors.first.withOpacity(0.15),
+                      : (isDisabled
+                            ? Colors.grey.withOpacity(0.3)
+                            : gradient.colors.first.withOpacity(0.15)),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   icon,
-                  color: isSelected ? Colors.white : gradient.colors.first,
+                  color: isDisabled
+                      ? Colors.grey.withOpacity(0.6)
+                      : (isSelected ? Colors.white : gradient.colors.first),
                   size: 14,
                 ),
               ),
               const SizedBox(width: 8),
 
-              // Title
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected ? Colors.white : Colors.white,
-                  letterSpacing: -0.1,
+              // Title and subtitle
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: isDisabled
+                            ? Colors.grey.withOpacity(0.6)
+                            : (isSelected ? Colors.white : Colors.white),
+                        letterSpacing: -0.1,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                          color: isDisabled
+                              ? Colors.grey.withOpacity(0.5)
+                              : Colors.white.withOpacity(0.7),
+                          letterSpacing: -0.1,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ],

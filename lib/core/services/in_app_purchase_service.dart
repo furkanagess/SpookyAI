@@ -38,6 +38,7 @@ class InAppPurchaseService {
 
   static bool get isAvailable => _isAvailable;
   static bool get purchasePending => _purchasePending;
+  static bool get lastPurchaseSuccess => _lastPurchaseSuccess;
   static String? get queryProductError => _queryProductError;
   static List<ProductDetails> get products => _products;
 
@@ -245,7 +246,9 @@ class InAppPurchaseService {
       // iOS-specific validation
       if (defaultTargetPlatform == TargetPlatform.iOS) {
         debugPrint('InAppPurchaseService: iOS platform detected');
-        // Additional iOS validation can be added here
+        debugPrint('InAppPurchaseService: Using iOS-optimized purchase flow');
+        // iOS purchases might take longer to complete
+        // The system will handle the purchase flow
       }
 
       final bool success = isPremium
@@ -277,9 +280,10 @@ class InAppPurchaseService {
   }
 
   static Future<bool> _waitForPurchaseCompletion() async {
-    // Wait for purchase to complete (max 60 seconds for iOS)
+    // Wait for purchase to complete (extended timeout for iOS)
     int attempts = 0;
-    const int maxAttempts = 60; // 60 seconds max wait for iOS
+    // Increased timeout for iOS - purchases can take longer
+    const int maxAttempts = 120; // 120 seconds max wait for iOS
 
     debugPrint('InAppPurchaseService: Waiting for purchase completion...');
 
@@ -302,7 +306,10 @@ class InAppPurchaseService {
         'InAppPurchaseService: Purchase completion timeout after ${maxAttempts * 500}ms',
       );
       _purchasePending = false;
-      return false;
+      // Don't immediately return false on timeout - check if we have a success status
+      debugPrint(
+        'InAppPurchaseService: Timeout reached, final success status: $_lastPurchaseSuccess',
+      );
     }
 
     debugPrint(
@@ -326,6 +333,7 @@ class InAppPurchaseService {
     debugPrint('Purchase pending: $_purchasePending');
     debugPrint('Purchase ID: ${purchaseDetails.purchaseID}');
     debugPrint('Transaction date: ${purchaseDetails.transactionDate}');
+    debugPrint('Platform: ${defaultTargetPlatform}');
 
     if (purchaseDetails.status == PurchaseStatus.purchased) {
       debugPrint(
@@ -371,7 +379,20 @@ class InAppPurchaseService {
       debugPrint('Error code: ${purchaseDetails.error?.code}');
       debugPrint('Error message: ${purchaseDetails.error?.message}');
       debugPrint('Error details: ${purchaseDetails.error?.details}');
-      _lastPurchaseSuccess = false;
+
+      // On iOS, some errors might not be actual failures
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        final errorCode = purchaseDetails.error?.code;
+        if (errorCode == 'user_cancelled' || errorCode == 'payment_cancelled') {
+          debugPrint('iOS: User cancelled purchase - not marking as failure');
+          _lastPurchaseSuccess = false;
+        } else {
+          debugPrint('iOS: Actual purchase error - marking as failure');
+          _lastPurchaseSuccess = false;
+        }
+      } else {
+        _lastPurchaseSuccess = false;
+      }
     } else if (purchaseDetails.status == PurchaseStatus.canceled) {
       debugPrint('Purchase canceled for ${purchaseDetails.productID}');
       _lastPurchaseSuccess = false;
@@ -381,13 +402,30 @@ class InAppPurchaseService {
       return;
     } else if (purchaseDetails.status == PurchaseStatus.restored) {
       debugPrint('Purchase restored for ${purchaseDetails.productID}');
-      // Handle restored purchases if needed
-      _lastPurchaseSuccess = true;
+      // Handle restored purchases - treat as success
+      try {
+        final int? tokens = _productTokenMap[purchaseDetails.productID];
+        if (tokens != null) {
+          await TokenService.addTokens(tokens);
+          debugPrint(
+            'Added $tokens tokens for restored purchase ${purchaseDetails.productID}',
+          );
+        } else if (purchaseDetails.productID == 'spookyai_premium') {
+          await PremiumService.activatePremiumSubscription();
+          debugPrint('Premium subscription restored');
+        }
+        _lastPurchaseSuccess = true;
+      } catch (e) {
+        debugPrint('Error processing restored purchase: $e');
+        _lastPurchaseSuccess = false;
+      }
     }
 
     // Always set purchase pending to false when handling is complete
     _purchasePending = false;
-    debugPrint('Purchase handling completed for ${purchaseDetails.productID}');
+    debugPrint(
+      'Purchase handling completed for ${purchaseDetails.productID} - Success: $_lastPurchaseSuccess',
+    );
   }
 
   static Future<void> restorePurchases() async {
@@ -484,12 +522,19 @@ class ExamplePaymentQueueDelegate implements SKPaymentQueueDelegateWrapper {
     debugPrint(
       'InAppPurchaseService: Product ID: ${transaction.payment.productIdentifier}',
     );
+    debugPrint(
+      'InAppPurchaseService: Transaction State: ${transaction.transactionState}',
+    );
+    debugPrint('InAppPurchaseService: Storefront: ${storefront.countryCode}');
+
+    // Always continue transactions to allow proper handling
     return true;
   }
 
   @override
   bool shouldShowPriceConsent() {
     debugPrint('InAppPurchaseService: shouldShowPriceConsent called');
+    // Don't show price consent dialog - let the system handle it
     return false;
   }
 }

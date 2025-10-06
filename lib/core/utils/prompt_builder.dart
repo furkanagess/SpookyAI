@@ -1,9 +1,9 @@
 import '../models/halloween_prompt_data.dart';
 
 class PromptBuilder {
-  // Image-to-image template using the new structured format
-  static const String _imageToImageTemplate =
-      '[USER_PROMPT], transformed into a Halloween themed cinematic digital artwork, [SETTING], [LIGHTING], [EFFECTS], film grain, premium digital art style, immersive atmosphere, no text, no watermark';
+  // Image-to-image template disabled - coming soon
+  // static const String _imageToImageTemplate =
+  //     '[USER_PROMPT], transformed into a Halloween themed cinematic digital artwork, [SETTING], [LIGHTING], [EFFECTS], film grain, premium digital art style, immersive atmosphere, no text, no watermark';
 
   // Text-to-image template using the new structured format
   static const String _textToImageTemplate =
@@ -19,34 +19,36 @@ class PromptBuilder {
   // static const String _ghostfaceTrendTextTemplate =
   //     '[USER_PROMPT], ultra-photorealistic cinematic composition: foreground subject seated on the right side of the frame on a bed with silky pink satin sheets, facing camera, holding a vintage pink corded phone to the ear, relaxed pose. A large glass bowl of popcorn sits on the bed in front, glossy teen magazines scattered on the pink sheets. The retro-styled pink bedroom walls are covered with colorful 90s movie and celebrity posters. A warm table lamp casts a soft cinematic glow. In the background, through the open doorway on the left, a tall shadowy figure in a black robe wearing the iconic Ghostface mask from the Scream movie stands silently, slightly blurred for depth of field. TikTok ghostface trend style, strongly enforced background Ghostface presence, realistic lighting, shallow depth of field, highly detailed, immersive atmosphere, no text, no watermark';
 
-  /// Builds a Halloween-themed prompt for image-to-image generation
-  ///
-  /// Takes the user's input prompt and combines it with the base Halloween
-  /// themed template to create a comprehensive prompt for image transformation.
-  static String buildImageToImagePrompt(String userPrompt) {
-    return _buildPrompt(
-      _imageToImageTemplate,
-      userPrompt,
-      'transform the input image',
-    );
-  }
+  // Image-to-image functionality disabled - coming soon
+  // /// Builds a Halloween-themed prompt for image-to-image generation
+  // ///
+  // /// Takes the user's input prompt and combines it with the base Halloween
+  // /// themed template to create a comprehensive prompt for image transformation.
+  // static String buildImageToImagePrompt(String userPrompt) {
+  //   return _buildPrompt(
+  //     _imageToImageTemplate,
+  //     userPrompt,
+  //     'transform the input image',
+  //   );
+  // }
 
-  /// Builds a Halloween-themed prompt for image-to-image generation with custom elements
-  static String buildImageToImagePromptWithElements(
-    String userPrompt, {
-    String? setting,
-    String? lighting,
-    String? effect,
-  }) {
-    return _buildPromptWithElements(
-      _imageToImageTemplate,
-      userPrompt,
-      'transform the input image',
-      setting: setting,
-      lighting: lighting,
-      effect: effect,
-    );
-  }
+  // Image-to-image functionality disabled - coming soon
+  // /// Builds a Halloween-themed prompt for image-to-image generation with custom elements
+  // static String buildImageToImagePromptWithElements(
+  //   String userPrompt, {
+  //   String? setting,
+  //   String? lighting,
+  //   String? effect,
+  // }) {
+  //   return _buildPromptWithElements(
+  //     _imageToImageTemplate,
+  //     userPrompt,
+  //     'transform the input image',
+  //     setting: setting,
+  //     lighting: lighting,
+  //     effect: effect,
+  //   );
+  // }
 
   /// Builds a Halloween-themed prompt for text-to-image generation
   ///
@@ -202,15 +204,16 @@ class PromptBuilder {
     return _negativePrompt;
   }
 
-  /// Builds the complete prompt structure for image-to-image generation
-  static Map<String, String> buildImageToImagePromptStructure(
-    String userPrompt,
-  ) {
-    return {
-      'prompt': buildImageToImagePrompt(userPrompt),
-      'negative_prompt': getNegativePrompt(),
-    };
-  }
+  // Image-to-image functionality disabled - coming soon
+  // /// Builds the complete prompt structure for image-to-image generation
+  // static Map<String, String> buildImageToImagePromptStructure(
+  //   String userPrompt,
+  // ) {
+  //   return {
+  //     'prompt': buildImageToImagePrompt(userPrompt),
+  //     'negative_prompt': getNegativePrompt(),
+  //   };
+  // }
 
   /// Builds the complete prompt structure for text-to-image generation
   static Map<String, String> buildTextToImagePromptStructure(

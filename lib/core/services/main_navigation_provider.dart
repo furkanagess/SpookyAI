@@ -148,11 +148,12 @@ class MainNavigationProvider extends ChangeNotifier {
   void setUploadedImage(Uint8List? imageBytes) {
     if (_uploadedImage != imageBytes) {
       _uploadedImage = imageBytes;
+      // Image-to-image functionality disabled - coming soon
       // Pre-fill prompt to instruct using the uploaded image
-      if (_activeMode == GenerationMode.image && _prompt.trim().isEmpty) {
-        _prompt =
-            'use this image: detailed transformation to spooky cinematic style';
-      }
+      // if (_activeMode == GenerationMode.image && _prompt.trim().isEmpty) {
+      //   _prompt =
+      //       'use this image: detailed transformation to spooky cinematic style';
+      // }
       notifyListeners();
     }
   }
@@ -166,6 +167,11 @@ class MainNavigationProvider extends ChangeNotifier {
 
   // Generation mode methods
   void switchMode(GenerationMode newMode) {
+    // Image-to-image mode is disabled - coming soon
+    if (newMode == GenerationMode.image) {
+      return;
+    }
+
     if (_activeMode != newMode) {
       _activeMode = newMode;
       if (_activeMode == GenerationMode.text) {

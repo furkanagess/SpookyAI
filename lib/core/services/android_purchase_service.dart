@@ -11,11 +11,12 @@ class AndroidPurchaseService {
   static List<Pack> getAndroidPacks() {
     return [
       // Premium Subscription Package (at the top)
+      // Note: Real price will be fetched from Google Play Console via pack.realPrice
       const Pack(
         name: 'SpookyAI Premium',
         tokens: 20,
         productId: 'spookyai_premium',
-        price: '4.99',
+        price: '4.99', // Fallback price - real price comes from Google Play
         note: 'Monthly subscription with exclusive benefits',
         imageAsset: 'assets/images/ghost-face.png',
         whiteTint: true,

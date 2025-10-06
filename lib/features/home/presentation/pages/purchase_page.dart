@@ -9,7 +9,6 @@ import '../../../../core/services/in_app_purchase_service.dart';
 import '../../../../core/utils/platform_utils.dart';
 import '../widgets/purchase_success_dialog.dart';
 import '../widgets/purchase_failed_dialog.dart';
-import '../widgets/subscription_info_dialog.dart';
 
 class PurchasePage extends StatefulWidget {
   const PurchasePage();
@@ -32,11 +31,14 @@ class _PurchasePageState extends State<PurchasePage> {
     if (provider.isLoading) return;
 
     try {
+      debugPrint('PurchasePage: Starting purchase for ${pack.name}');
       final bool success = await provider.buyPack(pack);
+      debugPrint('PurchasePage: Purchase result: $success');
 
       if (!mounted) return;
 
       if (success) {
+        debugPrint('PurchasePage: Showing success dialog for ${pack.name}');
         if (pack.isPremium) {
           await showPurchaseSuccessDialog(
             context,
@@ -50,12 +52,26 @@ class _PurchasePageState extends State<PurchasePage> {
           await showPurchaseSuccessDialog(context, tokensAdded: pack.tokens);
         }
       } else {
-        await PurchaseFailedDialog.show(
-          context,
-          reason: 'Purchase was not completed.',
-        );
+        debugPrint('PurchasePage: Purchase failed for ${pack.name}');
+
+        // Check if this was a user cancellation (don't show error dialog)
+        final isUserCancelled =
+            InAppPurchaseService.queryProductError?.contains('cancelled') ??
+            false;
+
+        if (!isUserCancelled) {
+          await PurchaseFailedDialog.show(
+            context,
+            reason: 'Purchase was not completed. Please try again.',
+          );
+        } else {
+          debugPrint(
+            'PurchasePage: User cancelled purchase - not showing error dialog',
+          );
+        }
       }
     } catch (e) {
+      debugPrint('PurchasePage: Exception during purchase: $e');
       if (mounted) {
         String reason = 'An unexpected error occurred during purchase.';
 
@@ -68,7 +84,8 @@ class _PurchasePageState extends State<PurchasePage> {
               'Payment processing failed. Please verify your payment method.';
         } else if (e.toString().contains('product')) {
           reason = 'Product not available. Please try again later.';
-        } else if (e.toString().contains('user')) {
+        } else if (e.toString().contains('user') ||
+            e.toString().contains('cancelled')) {
           reason = 'Purchase was cancelled by user.';
         }
 
@@ -319,20 +336,13 @@ class _PurchasePageState extends State<PurchasePage> {
 // Legacy chip removed
 
 String _pricePerToken(Pack p, PurchaseProvider provider) {
-  // Get the price that's displayed above
-  final String displayedPrice = PlatformUtils.isIOS
-      ? p.realPrice
-      : '${PlatformUtils.isAndroid ? 'TRY' : '\$'}${p.price}';
+  // Get the real price from Google Play/App Store
+  final String displayedPrice = p.realPrice;
 
   // Extract numeric value from the displayed price
   String numericPrice = displayedPrice;
-  if (PlatformUtils.isAndroid) {
-    // Remove "TRY" prefix and clean up
-    numericPrice = displayedPrice.replaceAll('TRY', '').trim();
-  } else {
-    // Remove "$" prefix and clean up
-    numericPrice = displayedPrice.replaceAll('\$', '').trim();
-  }
+  // Clean up currency symbols and text
+  numericPrice = numericPrice.replaceAll(RegExp(r'[^\d.,]'), '').trim();
 
   // Parse the numeric value
   final double total = double.tryParse(numericPrice) ?? 0;
@@ -422,7 +432,7 @@ class _SelectablePackRow extends StatelessWidget {
                               Text(
                                 PlatformUtils.isIOS
                                     ? pack.realPrice
-                                    : '${PlatformUtils.isAndroid ? 'TRY' : '\$'}${pack.price}',
+                                    : pack.realPrice,
                                 style: const TextStyle(
                                   color: Color(0xFFFF6A00),
                                   fontWeight: FontWeight.w800,
@@ -732,9 +742,7 @@ class _PremiumSubscriptionCard extends StatelessWidget {
                           Text(
                             isPremiumUser
                                 ? 'ACTIVE'
-                                : PlatformUtils.isIOS
-                                ? pack.realPrice
-                                : '${PlatformUtils.isAndroid ? 'TRY' : '\$'}${pack.price}',
+                                : pack.realPrice,
                             style: TextStyle(
                               color: isPremiumUser
                                   ? const Color(0xFF4CAF50)
