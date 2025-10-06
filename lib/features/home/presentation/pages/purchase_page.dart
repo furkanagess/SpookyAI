@@ -740,9 +740,7 @@ class _PremiumSubscriptionCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            isPremiumUser
-                                ? 'ACTIVE'
-                                : pack.realPrice,
+                            isPremiumUser ? 'ACTIVE' : pack.realPrice,
                             style: TextStyle(
                               color: isPremiumUser
                                   ? const Color(0xFF4CAF50)
