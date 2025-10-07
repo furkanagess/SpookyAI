@@ -20,7 +20,8 @@ class ContentReportDetailPage extends StatefulWidget {
   });
 
   @override
-  State<ContentReportDetailPage> createState() => _ContentReportDetailPageState();
+  State<ContentReportDetailPage> createState() =>
+      _ContentReportDetailPageState();
 }
 
 class _ContentReportDetailPageState extends State<ContentReportDetailPage>
@@ -40,19 +41,19 @@ class _ContentReportDetailPageState extends State<ContentReportDetailPage>
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    
+
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-    
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.1),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    ));
-    
+
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+
     _animationController.forward();
   }
 
@@ -153,10 +154,7 @@ class _ContentReportDetailPageState extends State<ContentReportDetailPage>
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [
-                          Color(0xFF0F0B1A),
-                          Color(0xFF1D162B),
-                        ],
+                        colors: [Color(0xFF0F0B1A), Color(0xFF1D162B)],
                       ),
                     ),
                   ),
@@ -308,10 +306,7 @@ class _ContentReportDetailPageState extends State<ContentReportDetailPage>
           decoration: BoxDecoration(
             color: const Color(0xFF2A1F3D),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.1),
-              width: 1,
-            ),
+            border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -375,7 +370,7 @@ class _ContentReportDetailPageState extends State<ContentReportDetailPage>
 
   Widget _buildCategoryCard(ReportCategory category) {
     final isSelected = _selectedCategory == category;
-    
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -429,11 +424,7 @@ class _ContentReportDetailPageState extends State<ContentReportDetailPage>
                   ),
                 ),
                 child: isSelected
-                    ? const Icon(
-                        Icons.check,
-                        color: Colors.white,
-                        size: 18,
-                      )
+                    ? const Icon(Icons.check, color: Colors.white, size: 18)
                     : null,
               ),
               const SizedBox(width: 16),
@@ -484,18 +475,18 @@ class _ContentReportDetailPageState extends State<ContentReportDetailPage>
         ...ReportReason.values
             .where((reason) => reason.category == _selectedCategory)
             .map((reason) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _buildReasonCard(reason),
-          );
-        }),
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _buildReasonCard(reason),
+              );
+            }),
       ],
     );
   }
 
   Widget _buildReasonCard(ReportReason reason) {
     final isSelected = _selectedReason == reason;
-    
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -539,11 +530,7 @@ class _ContentReportDetailPageState extends State<ContentReportDetailPage>
                   ),
                 ),
                 child: isSelected
-                    ? const Icon(
-                        Icons.check,
-                        color: Colors.white,
-                        size: 16,
-                      )
+                    ? const Icon(Icons.check, color: Colors.white, size: 16)
                     : null,
               ),
               const SizedBox(width: 16),
@@ -606,10 +593,7 @@ class _ContentReportDetailPageState extends State<ContentReportDetailPage>
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(
-                color: Color(0xFFFF6A00),
-                width: 2,
-              ),
+              borderSide: const BorderSide(color: Color(0xFFFF6A00), width: 2),
             ),
             contentPadding: const EdgeInsets.all(20),
           ),
@@ -702,14 +686,12 @@ class _ContentReportDetailPageState extends State<ContentReportDetailPage>
           ),
         ),
         const SizedBox(height: 16),
-        
+
         // Cancel Button
         SizedBox(
           width: double.infinity,
           child: TextButton(
-            onPressed: _isSubmitting
-                ? null
-                : () => Navigator.of(context).pop(),
+            onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
             style: TextButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 18),
               shape: RoundedRectangleBorder(
