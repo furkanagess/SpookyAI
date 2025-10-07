@@ -26,6 +26,12 @@ SpookyAI ("we," "our," or "us") is committed to protecting your privacy. This Pr
 - **Error Logs**: Technical logs for app performance and debugging
 - **Analytics**: Anonymous usage statistics to improve our service
 
+### 4. Content Moderation Data
+
+- **Report Information**: Details about content reports submitted by users
+- **Moderation Actions**: Records of content moderation decisions and actions taken
+- **Appeal Data**: Information related to appeals of moderation decisions
+
 ## How We Use Your Information
 
 ### 1. Service Provision
@@ -47,6 +53,13 @@ SpookyAI ("we," "our," or "us") is committed to protecting your privacy. This Pr
 - Respond to your inquiries and support requests
 - Provide service-related announcements
 
+### 4. Content Moderation
+
+- Review and process content reports submitted by users
+- Take appropriate action on reported content
+- Maintain records for moderation and enforcement purposes
+- Improve our content filtering and moderation systems
+
 ## Data Storage and Security
 
 ### 1. Local Storage
@@ -64,8 +77,13 @@ SpookyAI ("we," "our," or "us") is committed to protecting your privacy. This Pr
 ### 3. Security Measures
 
 - All data transmission is encrypted using industry-standard protocols
-- Regular security audits and updates
-- Access controls and authentication systems
+
+### 4. Content Moderation Data Storage
+
+- **Report Data**: Content reports are stored securely and accessed only by authorized moderation staff
+- **Retention Period**: Report data is retained for up to 2 years for enforcement and appeal purposes
+- **Anonymization**: Personal identifiers are removed from reports when possible
+- **Access Control**: Strict access controls limit who can view moderation data
 
 ## Third-Party Services
 
@@ -106,6 +124,13 @@ SpookyAI ("we," "our," or "us") is committed to protecting your privacy. This Pr
 - Export your generated content
 - Transfer your data to another service
 - Download your images and prompts
+
+### 4. Content Moderation Rights
+
+- **Report Content**: You can report inappropriate content through our in-app reporting system
+- **Appeal Decisions**: You can appeal content moderation decisions
+- **Request Review**: You can request review of content that was removed or flagged
+- **Privacy Protection**: Your identity is protected when making good-faith reports
 
 ## Children's Privacy
 

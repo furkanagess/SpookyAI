@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../../../core/theme/app_metrics.dart';
 import '../../../../core/services/image_storage_service.dart';
 import '../../../../core/services/saved_images_provider.dart';
+import 'content_report_detail_page.dart';
 
 class PhotosPage extends StatefulWidget {
   final VoidCallback? onNavigateToGenerate;
@@ -53,6 +54,26 @@ class _PhotosPageState extends State<PhotosPage> with TickerProviderStateMixin {
   Future<Uint8List?> _getImageBytes(String imageId, String filePath) async {
     final provider = context.read<SavedImagesProvider>();
     return await provider.getImageBytes(imageId, filePath);
+  }
+
+  Future<void> _showReportDialog(SavedImage image) async {
+    final imageBytes = await _getImageBytes(image.id, image.filePath);
+    
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ContentReportDetailPage(
+          prompt: image.prompt,
+          imageBytes: imageBytes,
+          imageId: image.id,
+          imagePath: image.filePath,
+        ),
+      ),
+    );
+    
+    // Optionally handle the result if needed
+    if (result == true) {
+      // Report was submitted successfully
+    }
   }
 
   Future<void> _deleteImage(String imageId) async {
@@ -310,66 +331,91 @@ class _PhotosPageState extends State<PhotosPage> with TickerProviderStateMixin {
                   const SizedBox(height: 0),
 
                   // Actions
-                  Row(
+                  Column(
                     children: [
-                      Expanded(
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextButton.icon(
+                              onPressed: () => Navigator.of(context).pop(),
+                              icon: const Icon(Icons.close, size: 18),
+                              label: const Text('Close'),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 10,
+                                ),
+                                minimumSize: const Size(0, 38),
+                                textStyle: const TextStyle(fontSize: 12),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: FilledButton.icon(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                _shareImage(image.filePath);
+                              },
+                              icon: const Icon(Icons.share, size: 18),
+                              label: const Text('Share'),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: const Color(0xFFFF6A00),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 10,
+                                ),
+                                minimumSize: const Size(0, 38),
+                                textStyle: const TextStyle(fontSize: 12),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: FilledButton.icon(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                _showDeleteConfirmation(image.id, image.prompt);
+                              },
+                              icon: const Icon(Icons.delete, size: 18),
+                              label: const Text('Delete'),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 10,
+                                ),
+                                minimumSize: const Size(0, 38),
+                                textStyle: const TextStyle(fontSize: 12),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      // Report button
+                      SizedBox(
+                        width: double.infinity,
                         child: TextButton.icon(
-                          onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(Icons.close, size: 18),
-                          label: const Text('Close'),
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            _showReportDialog(image);
+                          },
+                          icon: const Icon(
+                            Icons.report_problem_outlined,
+                            size: 16,
+                          ),
+                          label: const Text('Report Content'),
                           style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 10,
-                            ),
-                            minimumSize: const Size(0, 38),
+                            foregroundColor: Colors.white.withOpacity(0.7),
+                            padding: const EdgeInsets.symmetric(vertical: 8),
                             textStyle: const TextStyle(fontSize: 12),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            visualDensity: VisualDensity.compact,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: FilledButton.icon(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            _shareImage(image.filePath);
-                          },
-                          icon: const Icon(Icons.share, size: 18),
-                          label: const Text('Share'),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFFFF6A00),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 10,
-                            ),
-                            minimumSize: const Size(0, 38),
-                            textStyle: const TextStyle(fontSize: 12),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            visualDensity: VisualDensity.compact,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: FilledButton.icon(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            _showDeleteConfirmation(image.id, image.prompt);
-                          },
-                          icon: const Icon(Icons.delete, size: 18),
-                          label: const Text('Delete'),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 10,
-                            ),
-                            minimumSize: const Size(0, 38),
-                            textStyle: const TextStyle(fontSize: 12),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            visualDensity: VisualDensity.compact,
                           ),
                         ),
                       ),
@@ -868,6 +914,33 @@ class _PhotosPageState extends State<PhotosPage> with TickerProviderStateMixin {
                           ),
                           child: const Icon(
                             Icons.delete_rounded,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+
+                    // Report button
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => _showReportDialog(image),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withOpacity(0.8),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.2),
+                              width: 1,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.report_problem_rounded,
                             color: Colors.white,
                             size: 18,
                           ),

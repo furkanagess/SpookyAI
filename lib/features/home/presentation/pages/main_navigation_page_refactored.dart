@@ -18,6 +18,7 @@ import '../../domain/generation_mode.dart';
 import '../widgets/prompt_input_widget.dart';
 import '../widgets/generation_progress_dialog.dart';
 import '../widgets/paywall_dialog.dart';
+import 'content_report_detail_page.dart';
 import '../../../../core/models/paywall_service.dart';
 
 class MainNavigationPageRefactored extends StatefulWidget {
@@ -454,26 +455,47 @@ class _MainNavigationPageRefactoredState
                       ),
 
                     // Action buttons
-                    Row(
+                    Column(
                       children: [
-                        Expanded(
-                          child: TextButton.icon(
-                            onPressed: () => Navigator.of(context).pop(),
-                            icon: const Icon(Icons.close),
-                            label: const Text('Close'),
-                          ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextButton.icon(
+                                onPressed: () => Navigator.of(context).pop(),
+                                icon: const Icon(Icons.close),
+                                label: const Text('Close'),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: FilledButton.icon(
+                                onPressed: () async {
+                                  Navigator.of(context).pop();
+                                  await _saveImage(imageBytes);
+                                },
+                                icon: const Icon(Icons.download),
+                                label: const Text('Save'),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: const Color(0xFFFF6A00),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: FilledButton.icon(
-                            onPressed: () async {
-                              Navigator.of(context).pop();
-                              await _saveImage(imageBytes);
-                            },
-                            icon: const Icon(Icons.download),
-                            label: const Text('Save'),
-                            style: FilledButton.styleFrom(
-                              backgroundColor: const Color(0xFFFF6A00),
+                        const SizedBox(height: 8),
+                        // Report button
+                        SizedBox(
+                          width: double.infinity,
+                          child: TextButton.icon(
+                            onPressed: () => _showReportDialog(imageBytes),
+                            icon: const Icon(
+                              Icons.report_problem_outlined,
+                              size: 16,
+                            ),
+                            label: const Text('Report Content'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.white.withOpacity(0.7),
+                              padding: const EdgeInsets.symmetric(vertical: 8),
                             ),
                           ),
                         ),
@@ -513,6 +535,24 @@ class _MainNavigationPageRefactoredState
           message: NotificationService.saveFailed,
         );
       }
+    }
+  }
+
+  Future<void> _showReportDialog(Uint8List imageBytes) async {
+    final provider = context.read<MainNavigationProvider>();
+    
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ContentReportDetailPage(
+          prompt: provider.prompt,
+          imageBytes: imageBytes,
+        ),
+      ),
+    );
+    
+    // Optionally handle the result if needed
+    if (result == true) {
+      // Report was submitted successfully
     }
   }
 
