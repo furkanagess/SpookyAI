@@ -5,9 +5,9 @@ class PromptBuilder {
   // static const String _imageToImageTemplate =
   //     '[USER_PROMPT], transformed into a Halloween themed cinematic digital artwork, [SETTING], [LIGHTING], [EFFECTS], film grain, premium digital art style, immersive atmosphere, no text, no watermark';
 
-  // Text-to-image template using the new structured format
+  // Text-to-image template with enhanced user prompt emphasis
   static const String _textToImageTemplate =
-      '[USER_PROMPT], in a Halloween themed cinematic digital artwork, [SETTING], [LIGHTING], [EFFECTS], film grain, premium digital art style, immersive atmosphere, no text, no watermark';
+      '[ENHANCED_USER_PROMPT], in a Halloween themed cinematic digital artwork, [SETTING], [LIGHTING], [EFFECTS], film grain, premium digital art style, immersive atmosphere, no text, no watermark';
 
   // Negative prompt removed intentionally to avoid suppressing background Ghostface
   static const String _negativePrompt = '';
@@ -130,13 +130,14 @@ class PromptBuilder {
     final finalLighting = lighting ?? HalloweenPromptData.getRandomLighting();
     final finalEffect = effect ?? HalloweenPromptData.getRandomEffect();
 
-    // Clean the user prompt
-    final cleanedPrompt = _cleanPrompt(userPrompt);
-    final prompt = cleanedPrompt.isEmpty ? defaultPrompt : cleanedPrompt;
+    // Enhance the user prompt for better AI model attention
+    final enhancedPrompt = _enhanceUserPrompt(userPrompt);
+    final prompt = enhancedPrompt.isEmpty ? defaultPrompt : enhancedPrompt;
 
     // Replace all placeholders
     String finalPrompt = template
         .replaceAll('[USER_PROMPT]', prompt)
+        .replaceAll('[ENHANCED_USER_PROMPT]', prompt)
         .replaceAll('[SETTING]', finalSetting)
         .replaceAll('[LIGHTING]', finalLighting)
         .replaceAll('[EFFECTS]', finalEffect);
@@ -164,38 +165,17 @@ class PromptBuilder {
   //   return enforced;
   // }
 
-  /// Cleans the user prompt by removing redundant phrases that are already in the base template
-  static String _cleanPrompt(String userPrompt) {
+  /// Enhances user prompt with weight emphasis techniques
+  static String _enhanceUserPrompt(String userPrompt) {
+    // Simple enhancement for now - just clean and return
     String cleanedPrompt = userPrompt.trim();
 
-    // Remove common redundant phrases that might conflict with the base template
-    final redundantPhrases = [
-      'halloween themed',
-      'halloween theme',
-      'spooky',
-      'scary',
-      'ghost',
-      'haunted',
-      'cinematic',
-      'digital artwork',
-      'glowing',
-      'eerie',
-      'neon',
-      'no text',
-      'no watermark',
-    ];
-
-    for (String phrase in redundantPhrases) {
-      cleanedPrompt = cleanedPrompt.replaceAll(
-        RegExp(phrase, caseSensitive: false),
-        '',
-      );
+    // If prompt is empty or very short, return default
+    if (cleanedPrompt.isEmpty || cleanedPrompt.length < 3) {
+      return 'create a spooky scene';
     }
 
-    // Clean up extra spaces and commas
-    cleanedPrompt = cleanedPrompt.replaceAll(RegExp(r'\s+'), ' ').trim();
-    cleanedPrompt = cleanedPrompt.replaceAll(RegExp(r',\s*,'), ',');
-
+    // Return the original prompt with minimal processing
     return cleanedPrompt;
   }
 

@@ -339,11 +339,18 @@ class _MainNavigationPageRefactoredState
         }
       }
 
-      // Standard text-to-image only
-      resultBytes = await _stability.generateImageBytes(
-        prompt: provider.prompt,
-        onCancel: checkCancellation,
-      );
+      // Add timeout to generation process
+      resultBytes = await _stability
+          .generateImageBytes(
+            prompt: provider.prompt,
+            onCancel: checkCancellation,
+          )
+          .timeout(
+            const Duration(minutes: 3),
+            onTimeout: () {
+              throw Exception('Generation timeout - please try again');
+            },
+          );
 
       // Check if generation was cancelled
       if (isCancelled) {
@@ -381,10 +388,19 @@ class _MainNavigationPageRefactoredState
       // Only show error if not cancelled
       if (!isCancelled &&
           e.toString() != 'Exception: Generation cancelled by user') {
-        NotificationService.error(
-          context,
-          message: NotificationService.generationFailed,
-        );
+        String errorMessage = NotificationService.generationFailed;
+
+        // Provide specific error messages
+        if (e.toString().contains('timeout')) {
+          errorMessage =
+              'Generation took too long. Please try again with a shorter prompt.';
+        } else if (e.toString().contains('Missing Stability API key')) {
+          errorMessage = 'API key is missing. Please check your configuration.';
+        } else if (e.toString().contains('Stability error')) {
+          errorMessage = 'AI service error. Please try again.';
+        }
+
+        NotificationService.error(context, message: errorMessage);
       }
     } finally {
       if (mounted && !isCancelled) {
@@ -540,7 +556,7 @@ class _MainNavigationPageRefactoredState
 
   Future<void> _showReportDialog(Uint8List imageBytes) async {
     final provider = context.read<MainNavigationProvider>();
-    
+
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => ContentReportDetailPage(
@@ -549,7 +565,7 @@ class _MainNavigationPageRefactoredState
         ),
       ),
     );
-    
+
     // Optionally handle the result if needed
     if (result == true) {
       // Report was submitted successfully
@@ -572,6 +588,7 @@ class _MainNavigationPageRefactoredState
           }
         }
         return Scaffold(
+          resizeToAvoidBottomInset: false,
           body: IndexedStack(
             index: provider.currentIndex,
             children: [
@@ -747,7 +764,7 @@ class _MainNavigationPageRefactoredState
 
   Widget _buildGenerateTab(MainNavigationProvider provider) {
     return Scaffold(
-      resizeToAvoidBottomInset: true,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Row(
           children: [
@@ -946,45 +963,36 @@ class _MainNavigationPageRefactoredState
             ),
           ),
 
-          // Generate button (fixed at bottom, above home indicator/keyboard)
+          // Generate button (fixed at bottom, above home indicator)
           Positioned(
             left: 16,
             right: 16,
             bottom: 16,
             child: SafeArea(
-              minimum: EdgeInsets.only(left: 0, right: 0, bottom: 8),
-              child: AnimatedPadding(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOut,
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(context).viewInsets.bottom,
-                ),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed:
+              minimum: const EdgeInsets.only(left: 0, right: 0, bottom: 8),
+              child: SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed:
+                      !provider.isGenerating && provider.prompt.isNotEmpty
+                      ? _showGenerationConfirmationDialog
+                      : null,
+                  icon: provider.isGenerating
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.auto_fix_high),
+                  label: Text(
+                    provider.isGenerating ? 'Generating...' : 'Generate Image',
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor:
                         !provider.isGenerating && provider.prompt.isNotEmpty
-                        ? _showGenerationConfirmationDialog
-                        : null,
-                    icon: provider.isGenerating
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.auto_fix_high),
-                    label: Text(
-                      provider.isGenerating
-                          ? 'Generating...'
-                          : 'Generate Image',
-                    ),
-                    style: FilledButton.styleFrom(
-                      backgroundColor:
-                          !provider.isGenerating && provider.prompt.isNotEmpty
-                          ? const Color(0xFFFF6A00)
-                          : const Color(0xFF4B5563),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
+                        ? const Color(0xFFFF6A00)
+                        : const Color(0xFF4B5563),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),
               ),
@@ -1014,18 +1022,71 @@ class _MainNavigationPageRefactoredState
         children: [
           // Image to Image Mode (Coming Soon)
           Expanded(
-            child: _buildModeCard(
-              mode: GenerationMode.image,
-              icon: Icons.image_rounded,
-              title: 'Image to Image',
-              subtitle: 'Coming Soon',
-              gradient: const LinearGradient(
-                colors: [Color(0xFF06B6D4), Color(0xFF0891B2)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              provider: provider,
-              isDisabled: true,
+            child: Stack(
+              children: [
+                _buildModeCard(
+                  mode: GenerationMode.image,
+                  icon: Icons.image_rounded,
+                  title: 'Image to Image',
+                  subtitle: null,
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF06B6D4), Color(0xFF0891B2)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  provider: provider,
+                  isDisabled: true,
+                ),
+                // Coming Soon Banner
+                Positioned(
+                  top: -2,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFF6A00), Color(0xFFFF8C00)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFFF6A00).withOpacity(0.4),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.rocket_launch_rounded,
+                            color: Colors.white,
+                            size: 12,
+                          ),
+                          const SizedBox(width: 4),
+                          const Text(
+                            'Coming Soon',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(width: 6),
@@ -1069,6 +1130,7 @@ class _MainNavigationPageRefactoredState
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeInOut,
+          height: 64, // Fixed height for both buttons
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
@@ -1129,7 +1191,9 @@ class _MainNavigationPageRefactoredState
                     Text(
                       title,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: subtitle != null
+                            ? 12
+                            : 14, // Smaller title for buttons with subtitle
                         fontWeight: FontWeight.w600,
                         color: isDisabled
                             ? Colors.grey.withOpacity(0.6)
@@ -1143,7 +1207,7 @@ class _MainNavigationPageRefactoredState
                       Text(
                         subtitle,
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 9, // Smaller subtitle text
                           fontWeight: FontWeight.w500,
                           color: isDisabled
                               ? Colors.grey.withOpacity(0.5)

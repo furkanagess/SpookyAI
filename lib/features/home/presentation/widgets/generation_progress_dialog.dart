@@ -135,5 +135,12 @@ GenerationProgressController showGenerationProgressDialog(
     tick();
   });
 
+  // Add timeout to prevent infinite loading
+  Future<void>.delayed(const Duration(minutes: 2), () {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
+  });
+
   return GenerationProgressController(progress, closeDialog, cancelGeneration);
 }
