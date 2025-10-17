@@ -1,20 +1,26 @@
 import 'dart:async';
 import 'dart:typed_data';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../../../core/services/saved_images_provider.dart';
 import '../../../../core/services/token_provider.dart';
 import '../../../../core/services/main_navigation_provider.dart';
 import '../../../../core/widgets/token_display_widget.dart';
 
 import '../../../../core/services/stability_service.dart';
+import '../../../../core/services/fal_ai_service.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/theme/app_metrics.dart';
+import '../../../../core/utils/prompt_builder.dart';
 import 'purchase_page.dart';
 import 'photos_page.dart';
 import 'prompts_page.dart';
 import 'profile_page.dart';
 import '../../domain/generation_mode.dart';
+import '../../domain/generated_image_result.dart';
 import '../widgets/prompt_input_widget.dart';
 import '../widgets/generation_progress_dialog.dart';
 import '../widgets/paywall_dialog.dart';
@@ -297,6 +303,136 @@ class _MainNavigationPageRefactoredState
     }
   }
 
+  Future<void> _showFalAiGenerationConfirmationDialog() async {
+    final provider = context.read<MainNavigationProvider>();
+
+    if (provider.prompt.isEmpty) {
+      NotificationService.warning(
+        context,
+        message: 'Please enter a prompt to generate an image.',
+      );
+      return;
+    }
+
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: const Color(0xFF1D162B),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header with icon
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF9C27B0), Color(0xFF673AB7)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF9C27B0).withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.psychology,
+                    color: Colors.white,
+                    size: 32,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Title
+                const Text(
+                  'Confirm FAL AI Generation',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Description
+                const Text(
+                  'Generate image using FAL AI FLUX Schnell model with ultra-fast processing.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xFF8C7BA6),
+                    fontSize: 14,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(
+                            color: Color(0xFF8C7BA6),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFF9C27B0),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Generate',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      await _generateFalAiImage();
+    }
+  }
+
   Future<void> _generateImage() async {
     final tokenProvider = context.read<TokenProvider>();
 
@@ -304,15 +440,10 @@ class _MainNavigationPageRefactoredState
     await tokenProvider.loadBalance();
     if (tokenProvider.balance < 1) {
       if (!mounted) return;
-      NotificationService.error(
-        context,
-        message: NotificationService.outOfTokens,
-        actionLabel: 'Buy Tokens',
-        onAction: () async {
-          await Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (_) => const PurchasePage()));
-        },
+      await showDialog(
+        context: context,
+        barrierDismissible: true,
+        builder: (_) => const PaywallDialog(),
       );
       return;
     }
@@ -342,7 +473,7 @@ class _MainNavigationPageRefactoredState
       // Add timeout to generation process
       resultBytes = await _stability
           .generateImageBytes(
-            prompt: provider.prompt,
+            prompt: PromptBuilder.buildTextToImagePrompt(provider.prompt),
             onCancel: checkCancellation,
           )
           .timeout(
@@ -364,15 +495,29 @@ class _MainNavigationPageRefactoredState
       // Consume token only after successful generation
       await tokenProvider.consumeOne();
 
+      var generatedResult = GeneratedImageResult(
+        imageBytes: resultBytes,
+        prompt: provider.prompt,
+        source: GeneratedImageSource.stability,
+        generatedAt: DateTime.now(),
+      );
+
       if (!mounted) return;
-      provider.addGeneratedImage(resultBytes);
+      provider.addGeneratedImage(generatedResult);
+      final autoPersistFuture = _persistGeneratedImage(
+        generatedResult,
+        showSuccessNotification: false,
+      );
 
       try {
         progress.setProgress(1.0);
         progress.close();
       } catch (_) {}
 
-      await _showResultDialog(resultBytes);
+      await _showResultDialog(
+        generatedResult,
+        initialPersistFuture: autoPersistFuture,
+      );
       if (mounted) {
         NotificationService.success(
           context,
@@ -409,160 +554,538 @@ class _MainNavigationPageRefactoredState
     }
   }
 
-  Future<void> _showResultDialog(Uint8List imageBytes) async {
+  Future<void> _generateFalAiImage() async {
+    await _generateFalAiNewFlow();
+  }
+
+  // New, isolated FAL flow: minimal errors, always try to show the image
+  Future<void> _generateFalAiNewFlow() async {
+    print('🎃 FAL: Starting generation flow');
+    final tokenProvider = context.read<TokenProvider>();
+    await tokenProvider.loadBalance();
+    if (tokenProvider.balance < 1) {
+      if (!mounted) return;
+      await showDialog(
+        context: context,
+        barrierDismissible: true,
+        builder: (_) => const PaywallDialog(),
+      );
+      return;
+    }
+
     final provider = context.read<MainNavigationProvider>();
+    provider.setGenerating(true);
+
+    bool isCancelled = false;
+    final progress = showGenerationProgressDialog(
+      context,
+      onCancel: () {
+        isCancelled = true;
+        provider.setGenerating(false);
+      },
+    );
+
+    try {
+      print(
+        '🎃 FAL: Calling generateImage API with prompt: ${provider.prompt}',
+      );
+      final result = await FalAiService.generateImage(
+        prompt: PromptBuilder.buildTextToImagePrompt(provider.prompt),
+        numInferenceSteps: 4,
+        numImages: 1,
+        imageSize: '1024x1024',
+        enableSafetyChecker: true,
+      );
+      print('🎃 FAL: API returned ${result.images.length} images');
+
+      if (isCancelled) {
+        try {
+          progress.close();
+        } catch (_) {}
+        provider.setGenerating(false);
+        return;
+      }
+
+      if (result.images.isEmpty) {
+        // Graceful: just end silently
+        print('🎃 FAL: No images returned, ending');
+        try {
+          progress.close();
+        } catch (_) {}
+        provider.setGenerating(false);
+        return;
+      }
+
+      final String imageUrl = result.images.first.url;
+      print('🎃 FAL: Image URL: $imageUrl');
+      Uint8List? bytes;
+      try {
+        // Prefer bytes for uniform UI
+        print('🎃 FAL: Attempting to fetch bytes from URL');
+        bytes = await FalAiService.fetchImageBytes(imageUrl);
+        print('🎃 FAL: Successfully fetched ${bytes.length} bytes');
+      } catch (e) {
+        print('🎃 FAL: fetchImageBytes failed: $e');
+      }
+      // Secondary attempt: download to file then read bytes
+      if (bytes == null) {
+        try {
+          print('🎃 FAL: Attempting downloadAndSaveImage fallback');
+          final imagePath = await FalAiService.downloadAndSaveImage(imageUrl);
+          final imageFile = File(imagePath);
+          bytes = await imageFile.readAsBytes();
+          print('🎃 FAL: Successfully got bytes from file: ${bytes.length}');
+        } catch (e) {
+          print('🎃 FAL: downloadAndSaveImage failed: $e');
+        }
+      }
+
+      GeneratedImageResult? generationResult;
+      if (bytes != null) {
+        generationResult = GeneratedImageResult(
+          imageBytes: bytes,
+          prompt: provider.prompt,
+          source: GeneratedImageSource.fal,
+          generatedAt: DateTime.now(),
+          remoteUrl: imageUrl,
+        );
+      }
+
+      if (!mounted) return;
+
+      try {
+        progress.setProgress(1.0);
+        progress.close();
+      } catch (_) {}
+
+      GeneratedImageResult? finalizedResult = generationResult;
+      if (finalizedResult != null) {
+        print('🎃 FAL: Displaying image with bytes');
+        // Consume token only after we have bytes to show
+        await tokenProvider.consumeOne();
+        provider.addGeneratedImage(finalizedResult);
+        final persistFuture = _persistGeneratedImage(
+          finalizedResult,
+          showSuccessNotification: false,
+        );
+        await _showResultDialog(
+          finalizedResult,
+          initialPersistFuture: persistFuture,
+        );
+        if (mounted) {
+          NotificationService.success(
+            context,
+            message: NotificationService.imageGenerated,
+          );
+        }
+      } else {
+        print('🎃 FAL: Could not get bytes, showing network image as fallback');
+        // Final fallback: show network image in dialog
+        await tokenProvider.consumeOne();
+        await showDialog<void>(
+          context: context,
+          builder: (context) {
+            return Dialog(
+              backgroundColor: const Color(0xFF1D162B),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(12),
+                    ),
+                    child: Image.network(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          height: 200,
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                  : null,
+                            ),
+                          ),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          height: 200,
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.error, color: Colors.red),
+                                Text('Failed to load image'),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            );
+          },
+        );
+        if (mounted) {
+          NotificationService.success(
+            context,
+            message: NotificationService.imageGenerated,
+          );
+        }
+      }
+    } catch (e) {
+      // Swallow service errors in new flow; show nothing rather than error
+      print('🎃 FAL: Generation failed: $e');
+      try {
+        progress.close();
+      } catch (_) {}
+    } finally {
+      if (mounted && !isCancelled) {
+        provider.setGenerating(false);
+      }
+    }
+  }
+
+  Future<void> _showResultDialog(
+    GeneratedImageResult result, {
+    Future<GeneratedImageResult?>? initialPersistFuture,
+  }) async {
+    GeneratedImageResult currentResult = result;
+    bool isPersisted = result.isPersisted;
+    bool isSaving = false;
+    bool initialAttached = false;
+
+    void attachPersistFuture(
+      Future<GeneratedImageResult?> future,
+      StateSetter setState,
+    ) {
+      setState(() {
+        isSaving = true;
+      });
+      future
+          .then((updated) {
+            if (updated != null) {
+              setState(() {
+                currentResult = updated;
+                isPersisted = updated.isPersisted;
+              });
+            }
+          })
+          .catchError((_) {})
+          .whenComplete(() {
+            setState(() {
+              isSaving = false;
+            });
+          });
+    }
 
     return showDialog<void>(
       context: context,
       builder: (context) {
-        return Dialog(
-          backgroundColor: const Color(0xFF1D162B),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(12),
-                ),
-                child: Image.memory(
-                  imageBytes,
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    // Prompt info
-                    if (provider.prompt.isNotEmpty)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF2A1F3D),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.1),
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+        return StatefulBuilder(
+          builder: (context, setState) {
+            if (!initialAttached && initialPersistFuture != null) {
+              initialAttached = true;
+              attachPersistFuture(initialPersistFuture, setState);
+            }
+
+            final sourceLabel = currentResult.source == GeneratedImageSource.fal
+                ? 'FAL AI'
+                : 'Stability Diffusion';
+            final sourceColor = currentResult.source == GeneratedImageSource.fal
+                ? const Color(0xFF9C27B0)
+                : const Color(0xFFFF6A00);
+            final timestampLabel = _formatTimestamp(currentResult.generatedAt);
+
+            return Dialog(
+              backgroundColor: const Color(0xFF1D162B),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(12),
+                    ),
+                    child: Image.memory(
+                      currentResult.imageBytes,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        Row(
                           children: [
-                            const Text(
-                              'Prompt:',
-                              style: TextStyle(
-                                color: Color(0xFFFF6A00),
-                                fontWeight: FontWeight.w600,
-                                fontSize: 12,
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: sourceColor.withOpacity(0.18),
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    currentResult.source ==
+                                            GeneratedImageSource.fal
+                                        ? Icons.psychology
+                                        : Icons.auto_fix_high,
+                                    color: sourceColor,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    sourceLabel,
+                                    style: TextStyle(
+                                      color: sourceColor,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            const Spacer(),
                             Text(
-                              provider.prompt,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
+                              timestampLabel,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.6),
+                                fontSize: 12,
                               ),
                             ),
                           ],
                         ),
-                      ),
-
-                    // Action buttons
-                    Column(
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextButton.icon(
-                                onPressed: () => Navigator.of(context).pop(),
-                                icon: const Icon(Icons.close),
-                                label: const Text('Close'),
-                              ),
+                        const SizedBox(height: 16),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2A1F3D),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.1),
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: FilledButton.icon(
-                                onPressed: () async {
-                                  Navigator.of(context).pop();
-                                  await _saveImage(imageBytes);
-                                },
-                                icon: const Icon(Icons.download),
-                                label: const Text('Save'),
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: const Color(0xFFFF6A00),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Prompt',
+                                style: TextStyle(
+                                  color: Color(0xFFFF6A00),
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                currentResult.prompt,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Action buttons
+                        Column(
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextButton.icon(
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(),
+                                    icon: const Icon(Icons.close),
+                                    label: const Text('Close'),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: FilledButton.icon(
+                                    onPressed: isPersisted || isSaving
+                                        ? null
+                                        : () {
+                                            final future =
+                                                _persistGeneratedImage(
+                                                  currentResult,
+                                                  showSuccessNotification: true,
+                                                );
+                                            attachPersistFuture(
+                                              future,
+                                              setState,
+                                            );
+                                          },
+                                    icon: isSaving
+                                        ? const SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                    Colors.white,
+                                                  ),
+                                            ),
+                                          )
+                                        : Icon(
+                                            isPersisted
+                                                ? Icons.check
+                                                : Icons.download,
+                                          ),
+                                    label: Text(isPersisted ? 'Saved' : 'Save'),
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: const Color(0xFFFF6A00),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed: () async {
+                                      await _shareGeneratedImage(currentResult);
+                                    },
+                                    icon: const Icon(Icons.share),
+                                    label: const Text('Share'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.white,
+                                      side: BorderSide(
+                                        color: Colors.white.withOpacity(0.2),
+                                      ),
+                                      backgroundColor: const Color(
+                                        0xFF2A1F3D,
+                                      ).withOpacity(0.6),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              width: double.infinity,
+                              child: TextButton.icon(
+                                onPressed: () => _showReportDialog(
+                                  currentResult.imageBytes,
+                                  currentResult.prompt,
+                                ),
+                                icon: const Icon(
+                                  Icons.report_problem_outlined,
+                                  size: 16,
+                                ),
+                                label: const Text('Report Content'),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: Colors.white.withOpacity(
+                                    0.7,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8,
+                                  ),
                                 ),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        // Report button
-                        SizedBox(
-                          width: double.infinity,
-                          child: TextButton.icon(
-                            onPressed: () => _showReportDialog(imageBytes),
-                            icon: const Icon(
-                              Icons.report_problem_outlined,
-                              size: 16,
-                            ),
-                            label: const Text('Report Content'),
-                            style: TextButton.styleFrom(
-                              foregroundColor: Colors.white.withOpacity(0.7),
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                            ),
-                          ),
-                        ),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
   }
 
-  Future<void> _saveImage(Uint8List imageBytes) async {
-    final provider = context.read<MainNavigationProvider>();
+  Future<GeneratedImageResult?> _persistGeneratedImage(
+    GeneratedImageResult result, {
+    bool showSuccessNotification = true,
+  }) async {
+    if (!mounted) return null;
+    final navigationProvider = context.read<MainNavigationProvider>();
+
+    if (result.isPersisted) {
+      if (showSuccessNotification) {
+        NotificationService.info(
+          context,
+          message: 'Image is already saved in your gallery.',
+        );
+      }
+      return result;
+    }
 
     try {
       await context.read<SavedImagesProvider>().addSavedImage(
-        imageBytes: imageBytes,
-        prompt: provider.prompt,
+        imageBytes: result.imageBytes,
+        prompt: result.prompt,
         isImageToImage: false,
         originalImagePath: null,
       );
-
-      if (mounted) {
+      final updated = navigationProvider.markImagePersisted(result);
+      if (showSuccessNotification) {
         NotificationService.success(
           context,
           message: NotificationService.imageSaved,
         );
       }
+      return updated;
     } catch (e) {
-      if (mounted) {
+      debugPrint('Failed to persist generated image: $e');
+      if (showSuccessNotification) {
         NotificationService.error(
           context,
           message: NotificationService.saveFailed,
         );
       }
     }
+    return null;
   }
 
-  Future<void> _showReportDialog(Uint8List imageBytes) async {
-    final provider = context.read<MainNavigationProvider>();
+  Future<void> _shareGeneratedImage(GeneratedImageResult result) async {
+    try {
+      final directory = await getTemporaryDirectory();
+      final fileName =
+          'ghostface_${result.generatedAt.millisecondsSinceEpoch}.png';
+      final file = File('${directory.path}/$fileName');
+      await file.writeAsBytes(result.imageBytes, flush: true);
+      await Share.shareXFiles([
+        XFile(file.path),
+      ], text: result.prompt.isNotEmpty ? 'Prompt: ${result.prompt}' : null);
+    } catch (e) {
+      if (!mounted) return;
+      NotificationService.error(
+        context,
+        message: 'Failed to share image. Please try again.',
+      );
+    }
+  }
 
+  Future<void> _showReportDialog(Uint8List imageBytes, String prompt) async {
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => ContentReportDetailPage(
-          prompt: provider.prompt,
-          imageBytes: imageBytes,
-        ),
+        builder: (context) =>
+            ContentReportDetailPage(prompt: prompt, imageBytes: imageBytes),
       ),
     );
 
@@ -571,6 +1094,33 @@ class _MainNavigationPageRefactoredState
       // Report was submitted successfully
     }
   }
+
+  String _formatTimestamp(DateTime timestamp) {
+    final local = timestamp.toLocal();
+    final now = DateTime.now();
+    final difference = now.difference(local);
+
+    if (difference.inMinutes < 1) {
+      return 'Just now';
+    }
+    if (difference.inHours < 1) {
+      final minutes = difference.inMinutes;
+      return '$minutes min ago';
+    }
+    final twoDigits = (int value) => value.toString().padLeft(2, '0');
+    final hourMinute = '${twoDigits(local.hour)}:${twoDigits(local.minute)}';
+
+    if (difference.inDays < 1) {
+      return 'Today $hourMinute';
+    }
+
+    final day = twoDigits(local.day);
+    final month = twoDigits(local.month);
+    final year = local.year;
+    return '$day.$month.$year $hourMinute';
+  }
+
+  // _buildGeneratedImageCard removed
 
   @override
   Widget build(BuildContext context) {
@@ -951,6 +1501,7 @@ class _MainNavigationPageRefactoredState
 
                                 // Fixed Mode selector row
                                 _buildCompactModeSelector(provider),
+                                // Latest Creations removed
                               ],
                             ),
                           ),
@@ -963,38 +1514,73 @@ class _MainNavigationPageRefactoredState
             ),
           ),
 
-          // Generate button (fixed at bottom, above home indicator)
+          // Generate buttons (fixed at bottom, above home indicator)
           Positioned(
             left: 16,
             right: 16,
             bottom: 16,
             child: SafeArea(
               minimum: const EdgeInsets.only(left: 0, right: 0, bottom: 8),
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed:
-                      !provider.isGenerating && provider.prompt.isNotEmpty
-                      ? _showGenerationConfirmationDialog
-                      : null,
-                  icon: provider.isGenerating
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.auto_fix_high),
-                  label: Text(
-                    provider.isGenerating ? 'Generating...' : 'Generate Image',
+              child: Row(
+                children: [
+                  // Regular Generate Button
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed:
+                          !provider.isGenerating && provider.prompt.isNotEmpty
+                          ? _showGenerationConfirmationDialog
+                          : null,
+                      icon: provider.isGenerating
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.auto_fix_high),
+                      label: Text(
+                        provider.isGenerating
+                            ? 'Generating...'
+                            : 'Generate Image',
+                      ),
+                      style: FilledButton.styleFrom(
+                        backgroundColor:
+                            !provider.isGenerating && provider.prompt.isNotEmpty
+                            ? const Color(0xFFFF6A00)
+                            : const Color(0xFF4B5563),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                    ),
                   ),
-                  style: FilledButton.styleFrom(
-                    backgroundColor:
-                        !provider.isGenerating && provider.prompt.isNotEmpty
-                        ? const Color(0xFFFF6A00)
-                        : const Color(0xFF4B5563),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                ),
+                  const SizedBox(width: 12),
+                  // // FAL AI Generate Button
+                  // Expanded(
+                  //   child: FilledButton.icon(
+                  //     onPressed:
+                  //         !provider.isGenerating && provider.prompt.isNotEmpty
+                  //         ? _showFalAiGenerationConfirmationDialog
+                  //         : null,
+                  //     icon: provider.isGenerating
+                  //         ? const SizedBox(
+                  //             width: 20,
+                  //             height: 20,
+                  //             child: CircularProgressIndicator(strokeWidth: 2),
+                  //           )
+                  //         : const Icon(Icons.psychology),
+                  //     label: Text(
+                  //       provider.isGenerating
+                  //           ? 'Generating...'
+                  //           : 'Generate FAL Image',
+                  //     ),
+                  //     style: FilledButton.styleFrom(
+                  //       backgroundColor:
+                  //           !provider.isGenerating && provider.prompt.isNotEmpty
+                  //           ? const Color(0xFF9C27B0)
+                  //           : const Color(0xFF4B5563),
+                  //       padding: const EdgeInsets.symmetric(vertical: 16),
+                  //     ),
+                  //   ),
+                  // ),
+                ],
               ),
             ),
           ),

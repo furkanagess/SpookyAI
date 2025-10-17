@@ -143,6 +143,24 @@ class _PurchasePageState extends State<PurchasePage> {
                   icon: const Icon(Icons.restore),
                   tooltip: 'Restore Purchases',
                 ),
+              // // Debug-only: Add test tokens quickly
+              // if (kDebugMode)
+              //   IconButton(
+              //     onPressed: provider.isLoading
+              //         ? null
+              //         : () async {
+              //             final tokenProvider = context.read<TokenProvider>();
+              //             await tokenProvider.addTokens(5);
+              //             if (mounted) {
+              //               NotificationService.success(
+              //                 context,
+              //                 message: 'Added 5 test tokens',
+              //               );
+              //             }
+              //           },
+              //     icon: const Icon(Icons.add_circle_outline),
+              //     tooltip: 'Add 5 test tokens',
+              //   ),
               // Token Balance
               Padding(
                 padding: const EdgeInsets.symmetric(

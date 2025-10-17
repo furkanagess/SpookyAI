@@ -93,25 +93,37 @@ class _RedesignedSpinWheelState extends State<RedesignedSpinWheel>
       // Calculate final angle with multiple rotations
       final finalAngle = result.angle;
 
-      // Immediately grant tokens based on landed segment
-      await TokenService.addTokens(result.reward);
-      try {
-        // Refresh visible token balance if provider is in scope
-        await context.read<TokenProvider>().refreshBalance();
-      } catch (_) {}
-
       // Animate the spin
       _spinController.reset();
       _spinAnimation = Tween<double>(begin: 0, end: finalAngle).animate(
         CurvedAnimation(parent: _spinController, curve: Curves.easeOutCubic),
       );
 
-      _spinController.forward().then((_) {
+      _spinController.forward().then((_) async {
         provider.setSpinning(false);
-        provider.setLastResult(result);
+
+        // Determine landed segment by the final pointer position
+        final landedSegment = SpinService.findSegmentByAngle(finalAngle);
+        final landedReward = landedSegment.reward;
+
+        // Grant tokens and save last reward
+        await TokenService.addTokens(landedReward);
+        await SpinService.setLastSpinReward(landedReward);
+        try {
+          await context.read<TokenProvider>().refreshBalance();
+        } catch (_) {}
+
+        final finalized = SpinResult(
+          success: true,
+          reward: landedReward,
+          angle: finalAngle,
+          segment: landedSegment,
+          message: 'Congratulations! You won $landedReward tokens!',
+        );
+        provider.setLastResult(finalized);
 
         // Show enhanced success notification
-        _showSpinResultDialog(result);
+        _showSpinResultDialog(finalized);
 
         // Call completion callback
         widget.onSpinComplete?.call();

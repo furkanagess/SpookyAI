@@ -82,7 +82,8 @@ class SpinService {
     return 1 - spinCount; // Regular users get 1 spin per day
   }
 
-  /// Perform a spin and get reward
+  /// Perform a spin and return the spin angle. Reward will be determined
+  /// by the final pointer position in the UI.
   static Future<SpinResult> performSpin() async {
     final prefs = await SharedPreferences.getInstance();
     final isPremium = await _isPremiumUser();
@@ -100,9 +101,9 @@ class SpinService {
       );
     }
 
-    // Generate random spin result
-    final segment = _getRandomSegment();
-    final angle = _calculateSpinAngle(segment);
+    // Generate a random angle independent of segment; the UI will determine
+    // the landed segment based on the final pointer position.
+    final angle = _generateRandomAngle();
 
     // Update spin count
     if (isPremium) {
@@ -115,15 +116,12 @@ class SpinService {
     // Update last spin date
     await prefs.setString(_dailySpinKey, today.toIso8601String());
 
-    // Save last reward
-    await prefs.setInt(_lastSpinRewardKey, segment.reward);
-
     return SpinResult(
       success: true,
-      reward: segment.reward,
+      reward: 0, // determined in UI after animation
       angle: angle,
-      segment: segment,
-      message: 'Congratulations! You won ${segment.reward} tokens!',
+      segment: null,
+      message: 'Spinning...',
     );
   }
 
@@ -143,34 +141,25 @@ class SpinService {
     return await PremiumService.isPremiumUser();
   }
 
-  /// Generate random spin segment based on weights
-  static SpinSegment _getRandomSegment() {
-    final random = DateTime.now().millisecondsSinceEpoch % 100;
-    int cumulativeWeight = 0;
-
-    for (final segment in _spinSegments) {
-      cumulativeWeight += segment.weight;
-      if (random < cumulativeWeight) {
-        return segment;
-      }
-    }
-
-    // Fallback to first segment
-    return _spinSegments.first;
+  static double _generateRandomAngle() {
+    final random = DateTime.now().microsecondsSinceEpoch % 360;
+    final base = random.toDouble();
+    return base + (360.0 * 5);
   }
 
   /// Calculate spin angle for animation
-  static double _calculateSpinAngle(SpinSegment segment) {
-    final segmentIndex = _spinSegments.indexOf(segment);
+  /// Given a final angle in degrees, determine which segment is under the pointer.
+  /// Pointer is at the top of the wheel (90° from +X), wheel rotates by 'angleDeg'.
+  static SpinSegment findSegmentByAngle(double angleDeg) {
+    final normalized = ((90.0 - (angleDeg % 360.0)) + 360.0) % 360.0;
     final segmentAngle = 360.0 / _spinSegments.length;
-    final baseAngle = segmentIndex * segmentAngle;
+    int index = (normalized ~/ segmentAngle) % _spinSegments.length;
+    return _spinSegments[index];
+  }
 
-    // Add some randomness to the angle
-    final randomOffset = (DateTime.now().millisecondsSinceEpoch % 100) / 100.0;
-    final finalAngle = baseAngle + (segmentAngle * randomOffset);
-
-    // Add multiple rotations for better animation effect
-    return finalAngle + (360.0 * 5); // 5 full rotations
+  static Future<void> setLastSpinReward(int reward) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_lastSpinRewardKey, reward);
   }
 
   /// Check if two dates are the same day

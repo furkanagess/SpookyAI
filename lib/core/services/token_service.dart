@@ -6,7 +6,7 @@ class TokenService {
   static const String _kTokenKey = 'user_tokens_v1';
   static const String _kInitKey = 'user_tokens_initialized_v1';
   static const String _kTrialGrantedKey = 'trial_granted_once_v1';
-  static const int initialTokens = 3;
+  static const int initialTokens = 1;
 
   static Future<SharedPreferences> _prefs() => SharedPreferences.getInstance();
   static const FlutterSecureStorage _secure = FlutterSecureStorage();

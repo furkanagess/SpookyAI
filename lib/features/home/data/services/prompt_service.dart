@@ -17,6 +17,112 @@ class PromptService {
           tags: ['forest', 'horror', 'atmosphere'],
         ),
         PromptItem(
+          id: 'trick_or_treat_block_party',
+          title: 'Trick-or-Treat Block Party',
+          prompt:
+              'A lively Halloween neighborhood block party at dusk: rows of townhouses draped in fake cobwebs and paper bats, porches stacked with jack-o-lanterns carved in intricate patterns, strings of orange fairy lights zigzagging over the street. Children in elaborate costumes (witches with pointed hats, tiny vampires with capes, astronauts with reflective visors) dart between doorsteps, pumpkin pails swinging. Parents chat in small clusters holding steaming cups of cider. A fog machine wafts low-lying mist along the asphalt, reflective wet leaves glimmer in the glow. Warm porch light meets cool blue twilight; soft depth-of-field and cinematic grain, gentle lens flare from a streetlamp, cozy yet spooky atmosphere.',
+          tags: ['street', 'party', 'kids', 'pumpkins', 'neighborhood'],
+        ),
+        PromptItem(
+          id: 'haunted_front_porch_row',
+          title: 'Haunted Front Porch Row',
+          prompt:
+              'A row of vintage wooden porches decorated for Halloween on a narrow residential street: creaking steps, crepe-paper streamers fluttering in the breeze, witch silhouettes taped to windows, black-cat cutouts perched on railings. Carved pumpkins of all sizes emit flickering candlelight; a bowl of candy corn sits on a small table next to a brass door knocker shaped like a skull. Paper lanterns dangle overhead, gently swaying. Fallen maple leaves gather on the steps, their reds and oranges glowing under a warm porch bulb, while the background fades into cool twilight blue. Framing emphasizes the repeating porches; subtle film grain and shallow depth of field for a nostalgic seasonal vibe.',
+          tags: ['porch', 'pumpkins', 'lanterns', 'leaves', 'nostalgic'],
+        ),
+        PromptItem(
+          id: 'suburban_cul_de_sac_halloween',
+          title: 'Cul-de-Sac Halloween Night',
+          prompt:
+              'A suburban cul-de-sac transformed for Halloween: a towering inflatable ghost sways beside a driveway, a skeleton lounging in a lawn chair with sunglasses, and a DIY graveyard scene with foam tombstones and a fog machine puffing mist over grass. Kids in matching group costumes (classic monsters team) walk under strands of orange-and-purple lights stretched between mailboxes. A pickup truck bed is decorated as a trunk-or-treat station with candy bowls and spiderwebs. The sky is a rich indigo; a waxing moon peeks between high clouds. The street’s wet pavement reflects the candy-colored lights; cinematic low angle, bokeh from porch lights, cozy/festive tone.',
+          tags: ['suburban', 'graveyard', 'kids', 'lights', 'fog'],
+        ),
+        PromptItem(
+          id: 'old_town_halloween_market',
+          title: 'Old Town Halloween Market',
+          prompt:
+              'A quaint old-town square hosting a Halloween night market: wooden stalls draped with black cloth and garlands of dried orange slices, vendors selling caramel apples, candied nuts, and handmade masks. A street violinist plays a haunting melody near a fountain rimmed with carved pumpkins. Paper lanterns float above, casting warm pools of light on cobblestones. People in elegant Victorian-inspired costumes browse displays of witchy trinkets and potion bottles with wax seals. The scene glows under lantern light and distant string bulbs; gentle mist softens the far buildings; rich amber and plum color palette; cinematic composition with leading lines to the fountain.',
+          tags: ['market', 'lanterns', 'victorian', 'street', 'pumpkins'],
+        ),
+        PromptItem(
+          id: 'townhouse_halloween_procession',
+          title: 'Townhouse Halloween Procession',
+          prompt:
+              'A line of trick-or-treaters moves past brick townhouses with wrought-iron railings and carved pumpkins aligned on every step. Paper ghosts dangle from balcony planters; a vintage record player on a porch plays a crackly waltz. A golden retriever in a tiny bat costume sits beside a candy bowl. Street trees, their leaves half-fallen, cast long, delicate shadows under streetlights. The camera sits low behind a pumpkin pail crammed with wrapped candies; depth-of-field isolates a pair of kids in matching witch costumes mid-laugh. Warm highlights from pumpkins and porch lamps contrast with the cool night; fine film grain and soft vignetting add nostalgic texture.',
+          tags: ['townhouse', 'procession', 'pumpkins', 'street', 'costumes'],
+        ),
+        // Added detailed Halloween prompts
+        PromptItem(
+          id: 'samhain_bonfire_ritual',
+          title: 'Samhain Bonfire Ritual',
+          prompt:
+              'A circle of hooded figures around a blazing bonfire on Samhain night, carved pumpkins glowing with candlelight, ancient runes drawn in chalk on wet earth, cold mist rolling across the ground, ravens perched on gnarled branches, starry sky with a thin crescent moon, cinematic low-angle shot, ember sparks drifting into the night, deep orange and violet color palette, moody volumetric lighting',
+          tags: ['ritual', 'bonfire', 'samhain', 'runes', 'ravens'],
+        ),
+        PromptItem(
+          id: 'trick_or_treat_street',
+          title: 'Trick-or-Treat Street',
+          prompt:
+              'Suburban street on Halloween night, rows of decorated houses with flickering jack-o-lanterns, kids in elaborate costumes walking in small groups, fallen leaves covering the sidewalks, string lights and paper bats hanging from porches, warm porch lights contrasting with cool moonlight, nostalgic film grain, shallow depth of field, atmospheric haze, cozy yet eerie vibe',
+          tags: ['street', 'kids', 'pumpkins', 'nostalgic', 'decorations'],
+        ),
+        PromptItem(
+          id: 'witches_apothecary',
+          title: 'Witches Apothecary',
+          prompt:
+              'Ancient apothecary lit by candles, shelves filled with dusty glass bottles, labeled ingredients like mandrake root and nightshade, dried herbs hanging from beams, a black cat curled on a spellbook, cauldron steaming with green vapor, warm candle glow with cool backlight from a narrow window, macro details of textured labels and wax seals, rich cinematic color grading',
+          tags: ['witch', 'apothecary', 'cat', 'cauldron', 'herbs'],
+        ),
+        PromptItem(
+          id: 'ghost_train_station',
+          title: 'Ghost Train Station',
+          prompt:
+              'Abandoned Victorian train station at midnight, fog creeping over old tracks, a translucent spectral train arriving with dim lanterns, wrought iron arches and cracked tiles, paper flyers fluttering in the wind, cold blue moonlight against warm lantern glow, subtle motion blur on drifting spirits, cinematic noir composition',
+          tags: ['ghost', 'train', 'station', 'victorian', 'fog'],
+        ),
+        PromptItem(
+          id: 'pumpkin_king_court',
+          title: 'Pumpkin King’s Court',
+          prompt:
+              'Throne room carved inside a colossal pumpkin, glowing veins illuminating the interior, the Pumpkin King seated on a thorny vine throne wearing a crown of dried leaves, pumpkin-headed guards holding halberds, roots and vines spiraling along the floor, warm internal glow with creeping shadows, whimsical yet eerie fairytale tone',
+          tags: ['pumpkin', 'throne', 'fantasy', 'king', 'vines'],
+        ),
+        PromptItem(
+          id: 'harvest_scrarecrow_field',
+          title: 'Harvest Scarecrow Field',
+          prompt:
+              'Endless cornfield under a stormy sky, tattered scarecrows with stitched grins standing at irregular intervals, crows circling overhead, rusty windmill turning slowly, lightning illuminating silhouettes, gritty texture, desaturated tones with accents of orange twine and red thread, ominous folk horror mood',
+          tags: ['scarecrow', 'cornfield', 'storm', 'folk_horror', 'crows'],
+        ),
+        PromptItem(
+          id: 'occult_library',
+          title: 'Occult Library at Midnight',
+          prompt:
+              'Massive gothic library with towering shelves and spiral staircases, candles floating in mid-air, leather-bound grimoires chained to desks, pentagram etched into an ancient oak table, stained glass windows casting colored patterns, dust motes visible in shafts of moonlight, rich reds and deep shadows, dramatic chiaroscuro',
+          tags: ['library', 'occult', 'pentagram', 'grimoires', 'gothic'],
+        ),
+        PromptItem(
+          id: 'carnival_of_shadows',
+          title: 'Carnival of Shadows',
+          prompt:
+              'A derelict carnival at twilight with creaking Ferris wheel, striped tents torn by wind, funhouse mirrors reflecting distorted figures, strings of burnt-out bulbs, a masked ringmaster in silhouette, puddles reflecting neon remnants, cinematic lens flare, eerie color contrast of teal and amber',
+          tags: ['carnival', 'ferris_wheel', 'funhouse', 'ringmaster', 'neon'],
+        ),
+        PromptItem(
+          id: 'moonlit_seance',
+          title: 'Moonlit Séance',
+          prompt:
+              'Victorian parlor prepared for a séance, round table with spirit board, candles forming a precise circle, lace curtains fluttering from an unseen breeze, participants holding hands with eyes closed, faint glowing apparitions forming above the table, soft moonlight, subtle double exposure effect',
+          tags: ['seance', 'victorian', 'spirits', 'candlelight', 'parlor'],
+        ),
+        PromptItem(
+          id: 'cathedral_of_bones',
+          title: 'Cathedral of Bones',
+          prompt:
+              'Vast underground ossuary lit by torchlight, walls arranged with skulls and femurs in ornate patterns, altar draped in tattered black cloth, faint red candles, incense smoke curling upwards, distant chanting, cinematic depth with strong leading lines and symmetrical composition',
+          tags: ['ossuary', 'bones', 'cathedral', 'underground', 'torchlight'],
+        ),
+        PromptItem(
           id: 'haunted_house',
           title: 'Haunted Mansion',
           prompt:

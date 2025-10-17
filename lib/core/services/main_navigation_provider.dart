@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import '../../features/home/domain/generation_mode.dart';
+import '../../features/home/domain/generated_image_result.dart';
 import 'premium_service.dart';
 
 class MainNavigationProvider extends ChangeNotifier {
@@ -28,8 +28,11 @@ class MainNavigationProvider extends ChangeNotifier {
   bool _isGenerating = false;
   bool get isGenerating => _isGenerating;
 
-  final List<Uint8List> _generatedImages = <Uint8List>[];
-  List<Uint8List> get generatedImages => List.unmodifiable(_generatedImages);
+  final List<GeneratedImageResult> _generatedImages = <GeneratedImageResult>[];
+  List<GeneratedImageResult> get generatedImages =>
+      List.unmodifiable(_generatedImages);
+  GeneratedImageResult? get latestGeneratedImage =>
+      _generatedImages.isNotEmpty ? _generatedImages.first : null;
 
   GenerationMode _activeMode = GenerationMode.text;
   GenerationMode get activeMode => _activeMode;
@@ -189,9 +192,23 @@ class MainNavigationProvider extends ChangeNotifier {
     }
   }
 
-  void addGeneratedImage(Uint8List imageBytes) {
-    _generatedImages.insert(0, imageBytes);
+  void addGeneratedImage(GeneratedImageResult result) {
+    _generatedImages.insert(0, result);
+    if (_generatedImages.length > 10) {
+      _generatedImages.removeRange(10, _generatedImages.length);
+    }
     notifyListeners();
+  }
+
+  GeneratedImageResult markImagePersisted(GeneratedImageResult result) {
+    final index = _generatedImages.indexOf(result);
+    if (index != -1) {
+      final updated = result.copyWith(isPersisted: true);
+      _generatedImages[index] = updated;
+      notifyListeners();
+      return updated;
+    }
+    return result;
   }
 
   void clearGeneratedImages() {

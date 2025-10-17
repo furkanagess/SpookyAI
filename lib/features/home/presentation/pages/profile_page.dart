@@ -3,15 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/services/avatar_service.dart';
 import '../../../../core/services/notification_service.dart';
-import '../../../../core/services/token_provider.dart';
 import '../../../../core/widgets/token_display_widget.dart';
 import '../../../../core/services/saved_images_provider.dart';
 import '../../../../core/services/profile_provider.dart';
-import '../../../../core/services/daily_login_service.dart';
-import '../../../../core/services/premium_service.dart';
-import '../widgets/purchase_success_dialog.dart';
-import '../../../../core/services/token_service.dart';
-import '../../../../core/services/main_navigation_provider.dart';
 import '../../../../core/theme/app_metrics.dart';
 import '../widgets/image_selection_dialog.dart';
 import 'spin_page.dart';
@@ -501,38 +495,7 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  Future<void> _claimDailyReward(ProfileProvider provider) async {
-    // Check if already claimed today - no snackbar, button is already disabled
-    if (!provider.canClaimDailyReward) {
-      return;
-    }
-
-    try {
-      final result = await DailyLoginService.recordDailyLogin();
-
-      if (result.isNewLogin && result.reward > 0) {
-        // Add tokens to user balance
-        final tokenProvider = context.read<TokenProvider>();
-        await tokenProvider.addTokens(result.reward);
-
-        // Update provider state
-        await provider.claimDailyReward();
-
-        NotificationService.success(
-          context,
-          message:
-              'Daily reward claimed! +${result.reward} token. ${result.message}',
-        );
-      } else {
-        NotificationService.info(context, message: result.message);
-      }
-    } catch (e) {
-      NotificationService.error(
-        context,
-        message: 'Failed to claim daily reward. Please try again.',
-      );
-    }
-  }
+  // Daily reward feature removed
 
   Widget _buildActionsSection(ProfileProvider provider) {
     return Container(
@@ -571,8 +534,7 @@ class _ProfilePageState extends State<ProfilePage>
                 ),
               ),
               const Spacer(),
-              // Daily Reward moved to the right side of the title
-              _buildDailyRewardButton(provider),
+              // Daily reward removed
             ],
           ),
           const SizedBox(height: 20),
@@ -618,64 +580,7 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  Widget _buildDailyRewardButton(ProfileProvider provider) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: provider.canClaimDailyReward
-            ? () => _claimDailyReward(provider)
-            : null,
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            gradient: provider.canClaimDailyReward
-                ? const LinearGradient(
-                    colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                : LinearGradient(
-                    colors: [const Color(0xFF6B7280), const Color(0xFF4B5563)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: provider.canClaimDailyReward
-                  ? const Color(0xFF4CAF50).withOpacity(0.5)
-                  : const Color(0xFF6B7280).withOpacity(0.5),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                provider.canClaimDailyReward
-                    ? Icons.card_giftcard
-                    : Icons.check_circle,
-                color: provider.canClaimDailyReward
-                    ? Colors.white
-                    : const Color(0xFF9CA3AF),
-                size: 16,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                provider.canClaimDailyReward ? 'Daily Reward' : 'Claimed',
-                style: TextStyle(
-                  color: provider.canClaimDailyReward
-                      ? Colors.white
-                      : const Color(0xFF9CA3AF),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  // _buildDailyRewardButton removed
 
   Widget _buildNavigationButton({
     required IconData icon,
@@ -820,113 +725,11 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  Future<void> _activatePremiumDemo(ProfileProvider provider) async {
-    await provider.activatePremiumDemo();
-    // Immediately grant monthly tokens on demo activation for testing
-    await TokenService.grantMonthlyPremiumTokens();
-    await context.read<TokenProvider>().refreshBalance();
-    // Ensure main navigation reacts immediately
-    await context.read<MainNavigationProvider>().refreshPremiumStatus();
-    // Show premium congrats dialog with benefits
-    if (mounted) {
-      await showPurchaseSuccessDialog(
-        context,
-        tokensAdded: 20,
-        isPremiumSubscription: true,
-      );
-    }
-  }
+  // _activatePremiumDemo removed (unused)
 
-  Future<void> _deactivatePremiumDemo(ProfileProvider provider) async {
-    await provider.deactivatePremiumDemo();
-    NotificationService.info(context, message: 'Premium demo deactivated.');
-  }
+  // _deactivatePremiumDemo removed (unused)
 
-  void _openPremiumTesterMenu() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF1D162B),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.star, color: Colors.white),
-                title: const Text(
-                  'Activate Premium (Demo)',
-                  style: TextStyle(color: Colors.white),
-                ),
-                onTap: () async {
-                  Navigator.of(ctx).pop();
-                  await _activatePremiumDemo(context.read<ProfileProvider>());
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.star_border, color: Colors.white),
-                title: const Text(
-                  'Deactivate Premium (Demo)',
-                  style: TextStyle(color: Colors.white),
-                ),
-                onTap: () async {
-                  Navigator.of(ctx).pop();
-                  await _deactivatePremiumDemo(context.read<ProfileProvider>());
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.card_giftcard, color: Colors.white),
-                title: const Text(
-                  'Simulate Monthly 20-Token Grant',
-                  style: TextStyle(color: Colors.white),
-                ),
-                onTap: () async {
-                  Navigator.of(ctx).pop();
-                  await PremiumService.simulateMonthlyRenewalGrantForTesting();
-                  NotificationService.success(
-                    context,
-                    message: 'Simulated monthly 20-token grant.',
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.timer_off, color: Colors.white),
-                title: const Text(
-                  'Expire Premium Now',
-                  style: TextStyle(color: Colors.white),
-                ),
-                onTap: () async {
-                  Navigator.of(ctx).pop();
-                  await PremiumService.expirePremiumNowForTesting();
-                  NotificationService.info(
-                    context,
-                    message: 'Premium expired for testing.',
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.refresh, color: Colors.white),
-                title: const Text(
-                  'Refresh Premium Status',
-                  style: TextStyle(color: Colors.white),
-                ),
-                onTap: () async {
-                  Navigator.of(ctx).pop();
-                  await PremiumService.notifyListenersForTesting();
-                  NotificationService.info(
-                    context,
-                    message: 'Premium status refreshed.',
-                  );
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+  // _openPremiumTesterMenu removed (unused)
 
   @override
   Widget build(BuildContext context) {
