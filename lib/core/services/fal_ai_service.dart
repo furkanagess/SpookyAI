@@ -4,11 +4,22 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:gal/gal.dart';
+import '../config/environment_config.dart';
 
 class FalAiService {
-  static const String _apiKey =
-      '69588908-0d2b-4880-9169-ba235081cc65:64d6c98bb3e2778e19cc32ff3254353f';
   static const String _baseUrl = 'https://queue.fal.run/fal-ai/flux/schnell';
+
+  /// Get API key from environment variables
+  static String get _apiKey {
+    final apiKey = EnvironmentConfig.falAiApiKey;
+    if (apiKey == null || apiKey.isEmpty) {
+      throw FalAiException(
+        'FAL_AI_API_KEY not found in environment variables. '
+        'Please add FAL_AI_API_KEY to your .env file.',
+      );
+    }
+    return apiKey;
+  }
 
   /// Generate image using FAL AI FLUX Schnell model
   static Future<FalAiResult> generateImage({

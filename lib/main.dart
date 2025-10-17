@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'core/theme/app_theme.dart';
+import 'core/config/environment_config.dart';
 import 'features/home/presentation/pages/splash_page.dart';
 import 'package:provider/provider.dart';
 import 'core/services/saved_images_provider.dart';
@@ -24,6 +25,20 @@ void main() async {
   // Load environment variables
   try {
     await dotenv.load(fileName: ".env");
+
+    // Validate required API keys
+    if (!EnvironmentConfig.isFalAiKeyAvailable) {
+      print(
+        'Warning: FAL_AI_API_KEY not found in .env file. '
+        'Image generation will not work without this key.',
+      );
+    }
+
+    // Check for any missing API keys
+    final missingKeys = EnvironmentConfig.getMissingApiKeys();
+    if (missingKeys.isNotEmpty) {
+      print('Warning: Missing API keys: ${missingKeys.join(', ')}');
+    }
   } catch (e) {
     // .env file not found, continue without it
     // In production, API key should be provided via other means

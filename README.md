@@ -264,10 +264,30 @@ flutter run
 
 ### **🔐 API Configuration**
 
-1. Get your Stability AI API key from [Stability AI Platform](https://platform.stability.ai/)
-2. Create `.env` file in project root
-3. Add your API key: `STABILITY_API_KEY=your_key_here`
-4. Never commit the `.env` file to version control
+1. **FAL AI API Key (Required for image generation):**
+
+   - Get your FAL AI API key from [FAL AI Platform](https://fal.ai/)
+   - Add to `.env`: `FAL_AI_API_KEY=your_fal_ai_key_here`
+
+2. **Stability AI API Key (Optional):**
+
+   - Get your Stability AI API key from [Stability AI Platform](https://platform.stability.ai/)
+   - Add to `.env`: `STABILITY_API_KEY=your_stability_key_here`
+
+3. **Environment Setup:**
+
+   ```bash
+   # Copy the example environment file
+   cp env.example .env
+
+   # Edit .env with your actual API keys
+   nano .env
+   ```
+
+4. **Security Notes:**
+   - Never commit the `.env` file to version control
+   - The `.env` file is already in `.gitignore`
+   - Use different API keys for development and production
 
 </div>
 
