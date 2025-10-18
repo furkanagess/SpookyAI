@@ -24,6 +24,7 @@ import '../../domain/generated_image_result.dart';
 import '../widgets/prompt_input_widget.dart';
 import '../widgets/generation_progress_dialog.dart';
 import '../widgets/paywall_dialog.dart';
+import '../widgets/no_tokens_dialog.dart';
 import 'content_report_detail_page.dart';
 import '../../../../core/models/paywall_service.dart';
 
@@ -443,7 +444,7 @@ class _MainNavigationPageRefactoredState
       await showDialog(
         context: context,
         barrierDismissible: true,
-        builder: (_) => const PaywallDialog(),
+        builder: (_) => const NoTokensDialog(),
       );
       return;
     }
@@ -568,7 +569,7 @@ class _MainNavigationPageRefactoredState
       await showDialog(
         context: context,
         barrierDismissible: true,
-        builder: (_) => const PaywallDialog(),
+        builder: (_) => const NoTokensDialog(),
       );
       return;
     }
@@ -1525,30 +1526,42 @@ class _MainNavigationPageRefactoredState
                 children: [
                   // Regular Generate Button
                   Expanded(
-                    child: FilledButton.icon(
-                      onPressed:
-                          !provider.isGenerating && provider.prompt.isNotEmpty
-                          ? _showGenerationConfirmationDialog
-                          : null,
-                      icon: provider.isGenerating
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.auto_fix_high),
-                      label: Text(
-                        provider.isGenerating
-                            ? 'Generating...'
-                            : 'Generate Image',
-                      ),
-                      style: FilledButton.styleFrom(
-                        backgroundColor:
-                            !provider.isGenerating && provider.prompt.isNotEmpty
-                            ? const Color(0xFFFF6A00)
-                            : const Color(0xFF4B5563),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
+                    child: Consumer<TokenProvider>(
+                      builder: (context, tokenProvider, child) {
+                        final hasTokens = tokenProvider.balance > 0;
+                        final canGenerate =
+                            !provider.isGenerating &&
+                            provider.prompt.isNotEmpty &&
+                            hasTokens;
+
+                        return FilledButton.icon(
+                          onPressed: canGenerate
+                              ? _showGenerationConfirmationDialog
+                              : null,
+                          icon: provider.isGenerating
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.auto_fix_high),
+                          label: Text(
+                            provider.isGenerating
+                                ? 'Generating...'
+                                : !hasTokens
+                                ? 'Token Gerekli'
+                                : 'Generate Image',
+                          ),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: canGenerate
+                                ? const Color(0xFFFF6A00)
+                                : const Color(0xFF4B5563),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(width: 12),

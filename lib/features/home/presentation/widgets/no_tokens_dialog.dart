@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
 import '../pages/purchase_page.dart';
 
-class PaywallDialog extends StatefulWidget {
-  const PaywallDialog({super.key, this.onBuy, this.onRestore});
-
-  final VoidCallback? onBuy;
-  final VoidCallback? onRestore;
+class NoTokensDialog extends StatefulWidget {
+  const NoTokensDialog({super.key});
 
   @override
-  State<PaywallDialog> createState() => _PaywallDialogState();
+  State<NoTokensDialog> createState() => _NoTokensDialogState();
 }
 
-class _PaywallDialogState extends State<PaywallDialog>
+class _NoTokensDialogState extends State<NoTokensDialog>
     with TickerProviderStateMixin {
   late AnimationController _slideController;
   late AnimationController _fadeController;
@@ -60,7 +57,7 @@ class _PaywallDialogState extends State<PaywallDialog>
         child: SlideTransition(
           position: _slideAnimation,
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 380, maxHeight: 700),
+            constraints: const BoxConstraints(maxWidth: 380, maxHeight: 500),
             child: Stack(
               children: [
                 // Main content
@@ -115,7 +112,7 @@ class _PaywallDialogState extends State<PaywallDialog>
                                 ],
                               ),
                               child: const Icon(
-                                Icons.auto_awesome,
+                                Icons.warning_rounded,
                                 color: Colors.white,
                                 size: 40,
                               ),
@@ -129,10 +126,10 @@ class _PaywallDialogState extends State<PaywallDialog>
                                 colors: [Color(0xFFFF6A00), Color(0xFF9C27B0)],
                               ).createShader(bounds),
                               child: const Text(
-                                'Token Paketleri',
+                                'Tokenınız Kalmadı',
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 28,
+                                  fontSize: 24,
                                   fontWeight: FontWeight.bold,
                                 ),
                                 textAlign: TextAlign.center,
@@ -143,7 +140,7 @@ class _PaywallDialogState extends State<PaywallDialog>
 
                             // Subtitle
                             Text(
-                              'Görsel oluşturmak için token satın alın',
+                              'Daha fazla görsel oluşturmak için token satın alın',
                               style: TextStyle(
                                 color: Colors.white.withOpacity(0.8),
                                 fontSize: 16,
@@ -169,36 +166,22 @@ class _PaywallDialogState extends State<PaywallDialog>
                           children: [
                             _buildTokenFeature(
                               Icons.shopping_bag,
-                              '1 Token',
-                              'Tek görsel oluşturmak için',
+                              'Token Paketleri',
+                              '1, 10, 25, 60 veya 150 token seçenekleri',
                               true,
                             ),
                             const SizedBox(height: 16),
                             _buildTokenFeature(
-                              Icons.shopping_bag,
-                              '10 Tokens',
-                              '10 görsel oluşturmak için',
+                              Icons.auto_awesome,
+                              'Anında Kullanım',
+                              'Satın aldığınız tokenları hemen kullanabilirsiniz',
                               true,
                             ),
                             const SizedBox(height: 16),
                             _buildTokenFeature(
-                              Icons.shopping_bag,
-                              '25 Tokens',
-                              '25 görsel oluşturmak için',
-                              true,
-                            ),
-                            const SizedBox(height: 16),
-                            _buildTokenFeature(
-                              Icons.shopping_bag,
-                              '60 Tokens',
-                              '60 görsel oluşturmak için',
-                              true,
-                            ),
-                            const SizedBox(height: 16),
-                            _buildTokenFeature(
-                              Icons.shopping_bag,
-                              '150 Tokens',
-                              '150 görsel oluşturmak için',
+                              Icons.security,
+                              'Güvenli Ödeme',
+                              'Güvenli ödeme sistemi ile token satın alın',
                               true,
                             ),
                           ],
