@@ -233,66 +233,6 @@
 
 ---
 
-## 🚀 Getting Started
-
-<div style="background: #f8f9fa; padding: 30px; border-radius: 20px; margin: 30px 0;">
-
-### **📋 Prerequisites**
-
-- Flutter SDK (3.10+)
-- Dart SDK (3.0+)
-- Android Studio / VS Code
-- Stability AI API Key
-
-### **⚙️ Installation**
-
-```bash
-# Clone the repository
-git clone https://github.com/furkanagess/SpookyAI.git
-cd SpookyAI
-
-# Install dependencies
-flutter pub get
-
-# Configure API key
-cp env.example .env
-# Edit .env with your Stability AI API key
-
-# Run the app
-flutter run
-```
-
-### **🔐 API Configuration**
-
-1. **FAL AI API Key (Required for image generation):**
-
-   - Get your FAL AI API key from [FAL AI Platform](https://fal.ai/)
-   - Add to `.env`: `FAL_AI_API_KEY=your_fal_ai_key_here`
-
-2. **Stability AI API Key (Optional):**
-
-   - Get your Stability AI API key from [Stability AI Platform](https://platform.stability.ai/)
-   - Add to `.env`: `STABILITY_API_KEY=your_stability_key_here`
-
-3. **Environment Setup:**
-
-   ```bash
-   # Copy the example environment file
-   cp env.example .env
-
-   # Edit .env with your actual API keys
-   nano .env
-   ```
-
-4. **Security Notes:**
-   - Never commit the `.env` file to version control
-   - The `.env` file is already in `.gitignore`
-   - Use different API keys for development and production
-
-</div>
-
----
-
 ## 📊 Features Status
 
 <div style="overflow-x: auto; margin: 30px 0;">
@@ -339,31 +279,6 @@ flutter run
   </table>
 </div>
 
----
-
-## 🤝 Contributing
-
-<div style="background: linear-gradient(135deg, #96ceb4 0%, #feca57 100%); color: white; padding: 30px; border-radius: 20px; margin: 30px 0; text-align: center;">
-  <h3 style="margin: 0 0 20px 0;">🌟 We Welcome Contributions!</h3>
-  <p style="margin: 0 0 20px 0; font-size: 16px;">Help us make SpookyAI even more amazing</p>
-  
-  <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
-    <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; flex: 1; min-width: 200px;">
-      <h4 style="margin: 0 0 10px 0;">🐛 Bug Reports</h4>
-      <p style="margin: 0; font-size: 14px;">Found an issue? Let us know!</p>
-    </div>
-    <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; flex: 1; min-width: 200px;">
-      <h4 style="margin: 0 0 10px 0;">✨ Feature Requests</h4>
-      <p style="margin: 0; font-size: 14px;">Have an idea? Share it with us!</p>
-    </div>
-    <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; flex: 1; min-width: 200px;">
-      <h4 style="margin: 0 0 10px 0;">💻 Code Contributions</h4>
-      <p style="margin: 0; font-size: 14px;">Want to contribute code? Great!</p>
-    </div>
-  </div>
-</div>
-
----
 
 ## 📄 License
 
