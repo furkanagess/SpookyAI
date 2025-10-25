@@ -18,6 +18,7 @@ import 'core/services/halloween_prompt_provider.dart';
 import 'core/services/prompt_input_provider.dart';
 import 'core/services/in_app_purchase_service.dart';
 import 'core/services/quick_actions_service.dart';
+import 'core/services/admob_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,6 +34,12 @@ void main() async {
         'Image generation will not work without this key.',
       );
     }
+
+    // Extra: Fail-fast in debug if missing key to avoid silent img2img errors
+    assert(
+      EnvironmentConfig.isFalAiKeyAvailable,
+      'FAL_AI_API_KEY is required for FAL AI image generation (text/image).',
+    );
 
     // Check for any missing API keys
     final missingKeys = EnvironmentConfig.getMissingApiKeys();
@@ -50,6 +57,9 @@ void main() async {
 
   // Initialize quick actions
   await QuickActionsService.initialize();
+
+  // Initialize AdMob
+  await AdMobService.initialize();
 
   runApp(const GhostfaceApp());
 }

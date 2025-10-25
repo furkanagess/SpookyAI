@@ -3,10 +3,10 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class TokenService {
   TokenService._();
-  static const String _kTokenKey = 'user_tokens_v1';
-  static const String _kInitKey = 'user_tokens_initialized_v1';
-  static const String _kTrialGrantedKey = 'trial_granted_once_v1';
-  static const int initialTokens = 1;
+  static const String _kTokenKey = 'user_tokens_v2';
+  static const String _kInitKey = 'user_tokens_initialized_v2';
+  static const String _kTrialGrantedKey = 'trial_granted_once_v2';
+  static const double initialTokens = 3.0;
 
   static Future<SharedPreferences> _prefs() => SharedPreferences.getInstance();
   static const FlutterSecureStorage _secure = FlutterSecureStorage();
@@ -16,7 +16,7 @@ class TokenService {
   // robustly would require a backend. This client-side guard still stops
   // repeat grants within the same device lifecycle and on iOS across reinstalls.
 
-  static Future<int> getBalance() async {
+  static Future<double> getBalance() async {
     final prefs = await _prefs();
     // One-time trial grant: check secure flag to avoid abuse on reinstall
     final trialGranted = await _secure.read(key: _kTrialGrantedKey);
@@ -24,38 +24,47 @@ class TokenService {
       // First launch in this install. Decide whether to grant free tokens.
       if (trialGranted == 'yes') {
         // Trial already granted previously on this device; start with 0
-        await prefs.setInt(_kTokenKey, 0);
+        await prefs.setDouble(_kTokenKey, 0.0);
       } else {
         // First ever grant on this device → grant and mark in secure storage
-        await prefs.setInt(_kTokenKey, initialTokens);
+        await prefs.setDouble(_kTokenKey, initialTokens);
         await _secure.write(key: _kTrialGrantedKey, value: 'yes');
       }
       await prefs.setBool(_kInitKey, true);
     }
-    return prefs.getInt(_kTokenKey) ?? 0;
+    return prefs.getDouble(_kTokenKey) ?? 0.0;
   }
 
-  static Future<void> addTokens(int amount) async {
+  static Future<void> addTokens(double amount) async {
     final prefs = await _prefs();
     final current = await getBalance();
-    await prefs.setInt(_kTokenKey, current + amount);
+    final newBalance = current + amount;
+    await prefs.setDouble(_kTokenKey, newBalance);
   }
 
   static Future<bool> consumeOne() async {
     final prefs = await _prefs();
     final current = await getBalance();
     if (current <= 0) return false;
-    await prefs.setInt(_kTokenKey, current - 1);
+    await prefs.setDouble(_kTokenKey, current - 1.0);
+    return true;
+  }
+
+  static Future<bool> consumeTokens(double amount) async {
+    final prefs = await _prefs();
+    final current = await getBalance();
+    if (current < amount) return false;
+    await prefs.setDouble(_kTokenKey, current - amount);
     return true;
   }
 
   static Future<void> refundOne() async {
-    await addTokens(1);
+    await addTokens(1.0);
   }
 
   /// Grant monthly premium tokens (20 tokens)
   static Future<void> grantMonthlyPremiumTokens() async {
-    await addTokens(20);
+    await addTokens(20.0);
   }
 
   /// Check if user can claim monthly tokens

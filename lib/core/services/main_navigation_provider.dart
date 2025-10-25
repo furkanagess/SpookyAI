@@ -170,10 +170,7 @@ class MainNavigationProvider extends ChangeNotifier {
 
   // Generation mode methods
   void switchMode(GenerationMode newMode) {
-    // Image-to-image mode is disabled - coming soon
-    if (newMode == GenerationMode.image) {
-      return;
-    }
+    // Enable image-to-image mode
 
     if (_activeMode != newMode) {
       _activeMode = newMode;

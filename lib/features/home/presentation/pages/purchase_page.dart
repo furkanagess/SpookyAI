@@ -188,7 +188,10 @@ class _PurchasePageState extends State<PurchasePage> {
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            '${tokenProvider.balance}',
+                            tokenProvider.balance ==
+                                    tokenProvider.balance.roundToDouble()
+                                ? tokenProvider.balance.round().toString()
+                                : tokenProvider.balance.toStringAsFixed(1),
                             style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ],
@@ -353,26 +356,6 @@ class _PurchasePageState extends State<PurchasePage> {
 
 // Legacy chip removed
 
-String _pricePerToken(Pack p, PurchaseProvider provider) {
-  // Get the real price from Google Play/App Store
-  final String displayedPrice = p.realPrice;
-
-  // Extract numeric value from the displayed price
-  String numericPrice = displayedPrice;
-  // Clean up currency symbols and text
-  numericPrice = numericPrice.replaceAll(RegExp(r'[^\d.,]'), '').trim();
-
-  // Parse the numeric value
-  final double total = double.tryParse(numericPrice) ?? 0;
-
-  if (p.tokens == 0 || total == 0) return '-';
-
-  final double per = total / p.tokens;
-  final String currency = PlatformUtils.isAndroid ? 'TRY' : 'USD';
-
-  return '${per.toStringAsFixed(2)} $currency/token';
-}
-
 class _SelectablePackRow extends StatelessWidget {
   const _SelectablePackRow({
     required this.pack,
@@ -455,14 +438,6 @@ class _SelectablePackRow extends StatelessWidget {
                                   color: Color(0xFFFF6A00),
                                   fontWeight: FontWeight.w800,
                                   fontSize: 18,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                _pricePerToken(pack, provider),
-                                style: const TextStyle(
-                                  color: Color(0xFF8C7BA6),
-                                  fontSize: 12,
                                 ),
                               ),
                             ],
@@ -604,7 +579,7 @@ class _TokenBadge extends StatelessWidget {
         border: Border.all(color: const Color(0xFFFF6A00).withOpacity(0.6)),
       ),
       child: Text(
-        '$tokens Token',
+        '${tokens == tokens.toDouble().roundToDouble() ? tokens.toString() : tokens.toStringAsFixed(1)} Token${tokens != 1 ? 's' : ''}',
         style: const TextStyle(
           color: Color(0xFFFF6A00),
           fontWeight: FontWeight.w700,
@@ -832,7 +807,7 @@ class _PremiumSubscriptionCard extends StatelessWidget {
                         Text(
                           isPremiumUser
                               ? 'Premium Active'
-                              : '${pack.tokens} Tokens/Month',
+                              : '${pack.tokens == pack.tokens.toDouble().roundToDouble() ? pack.tokens.toString() : pack.tokens.toStringAsFixed(1)} Tokens/Month',
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,

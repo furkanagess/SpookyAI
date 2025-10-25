@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../../../core/services/saved_images_provider.dart';
@@ -10,7 +11,6 @@ import '../../../../core/services/token_provider.dart';
 import '../../../../core/services/main_navigation_provider.dart';
 import '../../../../core/widgets/token_display_widget.dart';
 
-import '../../../../core/services/stability_service.dart';
 import '../../../../core/services/fal_ai_service.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/theme/app_metrics.dart';
@@ -22,10 +22,11 @@ import 'profile_page.dart';
 import '../../domain/generation_mode.dart';
 import '../../domain/generated_image_result.dart';
 import '../widgets/prompt_input_widget.dart';
+import '../widgets/image_upload_widget.dart';
 import '../widgets/generation_progress_dialog.dart';
 import '../widgets/paywall_dialog.dart';
 import '../widgets/no_tokens_dialog.dart';
-import 'content_report_detail_page.dart';
+import '../widgets/low_balance_dialog.dart';
 import '../../../../core/models/paywall_service.dart';
 
 class MainNavigationPageRefactored extends StatefulWidget {
@@ -39,7 +40,6 @@ class MainNavigationPageRefactored extends StatefulWidget {
 class _MainNavigationPageRefactoredState
     extends State<MainNavigationPageRefactored>
     with TickerProviderStateMixin {
-  late final StabilityService _stability;
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
   late AnimationController _premiumBannerController;
@@ -60,7 +60,6 @@ class _MainNavigationPageRefactoredState
   @override
   void initState() {
     super.initState();
-    _stability = StabilityService();
 
     // Initialize animation controllers
     _fadeController = AnimationController(
@@ -315,6 +314,16 @@ class _MainNavigationPageRefactoredState
       return;
     }
 
+    // Require an uploaded image when in Image-to-Image mode
+    if (provider.activeMode == GenerationMode.image &&
+        provider.uploadedImage == null) {
+      NotificationService.warning(
+        context,
+        message: 'Please upload an image for Image-to-Image generation.',
+      );
+      return;
+    }
+
     final bool? confirmed = await showDialog<bool>(
       context: context,
       barrierDismissible: true,
@@ -464,25 +473,32 @@ class _MainNavigationPageRefactoredState
     try {
       Uint8List resultBytes;
 
-      // Create cancellation callback
-      Future<void> checkCancellation() async {
-        if (isCancelled) {
-          throw Exception('Generation cancelled by user');
-        }
+      // Use FAL AI FLUX Schnell for text-to-image generation with enhanced configuration
+      final result = await FalAiService.generateImage(
+        prompt: PromptBuilder.buildTextToImagePrompt(provider.prompt),
+        numInferenceSteps: 4, // FLUX Schnell default
+        numImages: 1,
+        imageSize: 'square_hd', // FLUX Schnell default
+        guidanceScale: 6.0, // FLUX Schnell default
+        enableSafetyChecker: true,
+        outputFormat: 'jpeg', // FLUX Schnell default
+        syncMode: false,
+        isCancelled: () => isCancelled, // Pass cancellation check
+        style: FluxSchnellStyle.realistic, // Enhanced style support
+        quality: FluxSchnellQuality.balanced, // Enhanced quality support
+      );
+
+      if (result.images.isEmpty) {
+        throw Exception('No images generated');
       }
 
-      // Add timeout to generation process
-      resultBytes = await _stability
-          .generateImageBytes(
-            prompt: PromptBuilder.buildTextToImagePrompt(provider.prompt),
-            onCancel: checkCancellation,
-          )
-          .timeout(
-            const Duration(minutes: 3),
-            onTimeout: () {
-              throw Exception('Generation timeout - please try again');
-            },
-          );
+      // Download the image from URL
+      final imageUrl = result.images.first.url;
+      final imageResponse = await http.get(Uri.parse(imageUrl));
+      if (imageResponse.statusCode != 200) {
+        throw Exception('Failed to download generated image');
+      }
+      resultBytes = imageResponse.bodyBytes;
 
       // Check if generation was cancelled
       if (isCancelled) {
@@ -493,32 +509,39 @@ class _MainNavigationPageRefactoredState
         return;
       }
 
-      // Consume token only after successful generation
-      await tokenProvider.consumeOne();
+      // Consume 1 token for text-to-image generation
+      await tokenProvider.consumeTokens(1);
+
+      // Check for low balance after token consumption
+      if (tokenProvider.isLowBalance) {
+        if (!mounted) return;
+        await showDialog(
+          context: context,
+          barrierDismissible: true,
+          builder: (_) => const LowBalanceDialog(),
+        );
+      }
 
       var generatedResult = GeneratedImageResult(
         imageBytes: resultBytes,
         prompt: provider.prompt,
-        source: GeneratedImageSource.stability,
+        source: GeneratedImageSource.fal,
         generatedAt: DateTime.now(),
       );
 
       if (!mounted) return;
       provider.addGeneratedImage(generatedResult);
-      final autoPersistFuture = _persistGeneratedImage(
-        generatedResult,
-        showSuccessNotification: false,
-      );
 
       try {
         progress.setProgress(1.0);
         progress.close();
       } catch (_) {}
 
-      await _showResultDialog(
-        generatedResult,
-        initialPersistFuture: autoPersistFuture,
-      );
+      await _showResultDialog(generatedResult);
+
+      // Clear prompt after successful generation
+      provider.updatePrompt('');
+
       if (mounted) {
         NotificationService.success(
           context,
@@ -533,17 +556,21 @@ class _MainNavigationPageRefactoredState
 
       // Only show error if not cancelled
       if (!isCancelled &&
-          e.toString() != 'Exception: Generation cancelled by user') {
+          e.toString() != 'Exception: Generation cancelled by user' &&
+          !e.toString().contains('Generation cancelled by user')) {
         String errorMessage = NotificationService.generationFailed;
 
         // Provide specific error messages
         if (e.toString().contains('timeout')) {
           errorMessage =
               'Generation took too long. Please try again with a shorter prompt.';
-        } else if (e.toString().contains('Missing Stability API key')) {
-          errorMessage = 'API key is missing. Please check your configuration.';
-        } else if (e.toString().contains('Stability error')) {
-          errorMessage = 'AI service error. Please try again.';
+        } else if (e.toString().contains('Missing FAL AI API key')) {
+          errorMessage =
+              'FAL AI API key is missing. Please check your configuration.';
+        } else if (e.toString().contains('FAL AI error')) {
+          errorMessage = 'FAL AI service error. Please try again.';
+        } else if (e.toString().contains('405')) {
+          errorMessage = 'API endpoint error. Please try again.';
         }
 
         NotificationService.error(context, message: errorMessage);
@@ -563,8 +590,19 @@ class _MainNavigationPageRefactoredState
   Future<void> _generateFalAiNewFlow() async {
     print('🎃 FAL: Starting generation flow');
     final tokenProvider = context.read<TokenProvider>();
+    final provider = context.read<MainNavigationProvider>();
+
     await tokenProvider.loadBalance();
-    if (tokenProvider.balance < 1) {
+
+    // Check token requirements based on generation mode
+    final bool useImg2Img =
+        provider.activeMode == GenerationMode.image &&
+        provider.uploadedImage != null;
+    final double requiredTokens = useImg2Img
+        ? 2.0
+        : 1.0; // 2 tokens for image-to-image, 1 token for text-to-image
+
+    if (tokenProvider.balance < requiredTokens) {
       if (!mounted) return;
       await showDialog(
         context: context,
@@ -574,7 +612,6 @@ class _MainNavigationPageRefactoredState
       return;
     }
 
-    final provider = context.read<MainNavigationProvider>();
     provider.setGenerating(true);
 
     bool isCancelled = false;
@@ -587,16 +624,36 @@ class _MainNavigationPageRefactoredState
     );
 
     try {
+      final bool useImg2Img =
+          provider.activeMode == GenerationMode.image &&
+          provider.uploadedImage != null;
       print(
-        '🎃 FAL: Calling generateImage API with prompt: ${provider.prompt}',
+        '🎃 FAL: Mode => ' +
+            (useImg2Img ? 'image-to-image' : 'text-to-image') +
+            ', prompt: ${provider.prompt}',
       );
-      final result = await FalAiService.generateImage(
-        prompt: PromptBuilder.buildTextToImagePrompt(provider.prompt),
-        numInferenceSteps: 4,
-        numImages: 1,
-        imageSize: '1024x1024',
-        enableSafetyChecker: true,
-      );
+
+      final result = useImg2Img
+          ? await FalAiService.generateImageFromImage(
+              prompt: PromptBuilder.buildImageToImagePrompt(provider.prompt),
+              imageBytes: provider.uploadedImage!,
+              imageStrength:
+                  0.8, // From screenshot - higher strength for scene composition
+              numInferenceSteps: 4, // From screenshot
+              guidanceScale: 6.0, // From screenshot
+              enableSafetyChecker: true, // From screenshot
+              outputFormat: 'jpeg', // From screenshot
+            )
+          : await FalAiService.generateImage(
+              prompt: PromptBuilder.buildTextToImagePrompt(provider.prompt),
+              numInferenceSteps: 4,
+              numImages: 1,
+              imageSize: 'square_hd',
+              guidanceScale: 6.0,
+              enableSafetyChecker: true,
+              outputFormat: 'jpeg',
+              syncMode: false,
+            );
       print('🎃 FAL: API returned ${result.images.length} images');
 
       if (isCancelled) {
@@ -662,17 +719,29 @@ class _MainNavigationPageRefactoredState
       GeneratedImageResult? finalizedResult = generationResult;
       if (finalizedResult != null) {
         print('🎃 FAL: Displaying image with bytes');
-        // Consume token only after we have bytes to show
-        await tokenProvider.consumeOne();
+        // Consume tokens based on generation mode
+        final double tokensToConsume = useImg2Img
+            ? 2.0
+            : 1.0; // 2 tokens for image-to-image, 1 token for text-to-image
+        await tokenProvider.consumeTokens(tokensToConsume);
+
+        // Check for low balance after token consumption
+        if (tokenProvider.isLowBalance) {
+          if (!mounted) return;
+          await showDialog(
+            context: context,
+            barrierDismissible: true,
+            builder: (_) => const LowBalanceDialog(),
+          );
+        }
+
         provider.addGeneratedImage(finalizedResult);
-        final persistFuture = _persistGeneratedImage(
-          finalizedResult,
-          showSuccessNotification: false,
-        );
-        await _showResultDialog(
-          finalizedResult,
-          initialPersistFuture: persistFuture,
-        );
+        await _showResultDialog(finalizedResult);
+
+        // Clear prompt and uploaded image after successful generation
+        provider.updatePrompt('');
+        provider.removeUploadedImage();
+
         if (mounted) {
           NotificationService.success(
             context,
@@ -682,7 +751,22 @@ class _MainNavigationPageRefactoredState
       } else {
         print('🎃 FAL: Could not get bytes, showing network image as fallback');
         // Final fallback: show network image in dialog
-        await tokenProvider.consumeOne();
+        // Consume tokens based on generation mode
+        final double tokensToConsume = useImg2Img
+            ? 2.0
+            : 1.0; // 2 tokens for image-to-image, 1 token for text-to-image
+        await tokenProvider.consumeTokens(tokensToConsume);
+
+        // Check for low balance after token consumption
+        if (tokenProvider.isLowBalance) {
+          if (!mounted) return;
+          await showDialog(
+            context: context,
+            barrierDismissible: true,
+            builder: (_) => const LowBalanceDialog(),
+          );
+        }
+
         await showDialog<void>(
           context: context,
           builder: (context) {
@@ -695,38 +779,46 @@ class _MainNavigationPageRefactoredState
                     borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(12),
                     ),
-                    child: Image.network(
-                      imageUrl,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Container(
-                          height: 200,
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                        loadingProgress.expectedTotalBytes!
-                                  : null,
+                    child: Container(
+                      width: 280,
+                      height: 280,
+                      child: Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        width: 280,
+                        height: 280,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            width: 280,
+                            height: 280,
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                value:
+                                    loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                    : null,
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          height: 200,
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.error, color: Colors.red),
-                                Text('Failed to load image'),
-                              ],
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: 280,
+                            height: 280,
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.error, color: Colors.red),
+                                  Text('Failed to load image'),
+                                ],
+                              ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -735,6 +827,11 @@ class _MainNavigationPageRefactoredState
             );
           },
         );
+
+        // Clear prompt and uploaded image after successful generation
+        provider.updatePrompt('');
+        provider.removeUploadedImage();
+
         if (mounted) {
           NotificationService.success(
             context,
@@ -798,14 +895,6 @@ class _MainNavigationPageRefactoredState
               attachPersistFuture(initialPersistFuture, setState);
             }
 
-            final sourceLabel = currentResult.source == GeneratedImageSource.fal
-                ? 'FAL AI'
-                : 'Stability Diffusion';
-            final sourceColor = currentResult.source == GeneratedImageSource.fal
-                ? const Color(0xFF9C27B0)
-                : const Color(0xFFFF6A00);
-            final timestampLabel = _formatTimestamp(currentResult.generatedAt);
-
             return Dialog(
               backgroundColor: const Color(0xFF1D162B),
               child: Column(
@@ -815,60 +904,21 @@ class _MainNavigationPageRefactoredState
                     borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(12),
                     ),
-                    child: Image.memory(
-                      currentResult.imageBytes,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
+                    child: Container(
+                      width: 280,
+                      height: 280,
+                      child: Image.memory(
+                        currentResult.imageBytes,
+                        fit: BoxFit.cover,
+                        width: 280,
+                        height: 280,
+                      ),
                     ),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: sourceColor.withOpacity(0.18),
-                                borderRadius: BorderRadius.circular(24),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    currentResult.source ==
-                                            GeneratedImageSource.fal
-                                        ? Icons.psychology
-                                        : Icons.auto_fix_high,
-                                    color: sourceColor,
-                                    size: 16,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    sourceLabel,
-                                    style: TextStyle(
-                                      color: sourceColor,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Spacer(),
-                            Text(
-                              timestampLabel,
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.6),
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
                         const SizedBox(height: 16),
                         Container(
                           width: double.infinity,
@@ -982,29 +1032,6 @@ class _MainNavigationPageRefactoredState
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 8),
-                            SizedBox(
-                              width: double.infinity,
-                              child: TextButton.icon(
-                                onPressed: () => _showReportDialog(
-                                  currentResult.imageBytes,
-                                  currentResult.prompt,
-                                ),
-                                icon: const Icon(
-                                  Icons.report_problem_outlined,
-                                  size: 16,
-                                ),
-                                label: const Text('Report Content'),
-                                style: TextButton.styleFrom(
-                                  foregroundColor: Colors.white.withOpacity(
-                                    0.7,
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 8,
-                                  ),
-                                ),
-                              ),
-                            ),
                           ],
                         ),
                       ],
@@ -1080,45 +1107,6 @@ class _MainNavigationPageRefactoredState
         message: 'Failed to share image. Please try again.',
       );
     }
-  }
-
-  Future<void> _showReportDialog(Uint8List imageBytes, String prompt) async {
-    final result = await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) =>
-            ContentReportDetailPage(prompt: prompt, imageBytes: imageBytes),
-      ),
-    );
-
-    // Optionally handle the result if needed
-    if (result == true) {
-      // Report was submitted successfully
-    }
-  }
-
-  String _formatTimestamp(DateTime timestamp) {
-    final local = timestamp.toLocal();
-    final now = DateTime.now();
-    final difference = now.difference(local);
-
-    if (difference.inMinutes < 1) {
-      return 'Just now';
-    }
-    if (difference.inHours < 1) {
-      final minutes = difference.inMinutes;
-      return '$minutes min ago';
-    }
-    final twoDigits = (int value) => value.toString().padLeft(2, '0');
-    final hourMinute = '${twoDigits(local.hour)}:${twoDigits(local.minute)}';
-
-    if (difference.inDays < 1) {
-      return 'Today $hourMinute';
-    }
-
-    final day = twoDigits(local.day);
-    final month = twoDigits(local.month);
-    final year = local.year;
-    return '$day.$month.$year $hourMinute';
   }
 
   // _buildGeneratedImageCard removed
@@ -1351,6 +1339,41 @@ class _MainNavigationPageRefactoredState
         elevation: 0,
         toolbarHeight: AppMetrics.toolbarHeight,
         actions: [
+          // Help Button
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: _showHelpDialog,
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFF6A00), Color(0xFF9C27B0)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFF6A00).withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.help_outline,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
           // Token Purchase Button
           TokenDisplayWidget(
             onTap: () async {
@@ -1471,22 +1494,20 @@ class _MainNavigationPageRefactoredState
                                   ),
                                 ),
 
-                                // Image upload area with optimized positioning
-                                ClipRect(
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 300),
-                                    curve: Curves.easeInOut,
-                                    height: 0,
-                                    child: AnimatedOpacity(
-                                      duration: const Duration(
-                                        milliseconds: 300,
-                                      ),
-                                      curve: Curves.easeInOut,
-                                      opacity: 0.0,
-                                      child: const SizedBox.shrink(),
+                                // Image upload area (visible only in image-to-image mode)
+                                if (provider.activeMode == GenerationMode.image)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: ImageUploadWidget(
+                                      uploadedImage: provider.uploadedImage,
+                                      onImageSelected: (bytes) {
+                                        provider.setUploadedImage(bytes);
+                                      },
+                                      onImageRemoved: () {
+                                        provider.removeUploadedImage();
+                                      },
                                     ),
                                   ),
-                                ),
 
                                 // Spacing
                                 const SizedBox(height: 8),
@@ -1522,79 +1543,7 @@ class _MainNavigationPageRefactoredState
             bottom: 16,
             child: SafeArea(
               minimum: const EdgeInsets.only(left: 0, right: 0, bottom: 8),
-              child: Row(
-                children: [
-                  // Regular Generate Button
-                  Expanded(
-                    child: Consumer<TokenProvider>(
-                      builder: (context, tokenProvider, child) {
-                        final hasTokens = tokenProvider.balance > 0;
-                        final canGenerate =
-                            !provider.isGenerating &&
-                            provider.prompt.isNotEmpty &&
-                            hasTokens;
-
-                        return FilledButton.icon(
-                          onPressed: canGenerate
-                              ? _showGenerationConfirmationDialog
-                              : null,
-                          icon: provider.isGenerating
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Icon(Icons.auto_fix_high),
-                          label: Text(
-                            provider.isGenerating
-                                ? 'Generating...'
-                                : !hasTokens
-                                ? 'Token Gerekli'
-                                : 'Generate Image',
-                          ),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: canGenerate
-                                ? const Color(0xFFFF6A00)
-                                : const Color(0xFF4B5563),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  // // FAL AI Generate Button
-                  // Expanded(
-                  //   child: FilledButton.icon(
-                  //     onPressed:
-                  //         !provider.isGenerating && provider.prompt.isNotEmpty
-                  //         ? _showFalAiGenerationConfirmationDialog
-                  //         : null,
-                  //     icon: provider.isGenerating
-                  //         ? const SizedBox(
-                  //             width: 20,
-                  //             height: 20,
-                  //             child: CircularProgressIndicator(strokeWidth: 2),
-                  //           )
-                  //         : const Icon(Icons.psychology),
-                  //     label: Text(
-                  //       provider.isGenerating
-                  //           ? 'Generating...'
-                  //           : 'Generate FAL Image',
-                  //     ),
-                  //     style: FilledButton.styleFrom(
-                  //       backgroundColor:
-                  //           !provider.isGenerating && provider.prompt.isNotEmpty
-                  //           ? const Color(0xFF9C27B0)
-                  //           : const Color(0xFF4B5563),
-                  //       padding: const EdgeInsets.symmetric(vertical: 16),
-                  //     ),
-                  //   ),
-                  // ),
-                ],
-              ),
+              child: _buildGenerateButtons(provider),
             ),
           ),
         ],
@@ -1634,56 +1583,7 @@ class _MainNavigationPageRefactoredState
                     end: Alignment.bottomRight,
                   ),
                   provider: provider,
-                  isDisabled: true,
-                ),
-                // Coming Soon Banner
-                Positioned(
-                  top: -2,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFFF6A00), Color(0xFFFF8C00)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFFFF6A00).withOpacity(0.4),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.rocket_launch_rounded,
-                            color: Colors.white,
-                            size: 12,
-                          ),
-                          const SizedBox(width: 4),
-                          const Text(
-                            'Coming Soon',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.2,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  isDisabled: false,
                 ),
               ],
             ),
@@ -1708,6 +1608,247 @@ class _MainNavigationPageRefactoredState
         ],
       ),
     );
+  }
+
+  void _showHelpDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: const Color(0xFF1D162B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFF6A00), Color(0xFF9C27B0)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.auto_fix_high,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  const Expanded(
+                    child: Text(
+                      'How to Use SpookyAI',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // Content
+              const Text(
+                'Create amazing Halloween images with AI! Here\'s how to get the best results:',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 16,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+
+              // Tips
+              _buildHelpTip(
+                icon: Icons.text_fields,
+                title: 'Write Detailed Prompts',
+                description:
+                    'Be specific about what you want. Instead of "scary", try "spooky haunted mansion with glowing windows and fog"',
+              ),
+              const SizedBox(height: 16),
+
+              _buildHelpTip(
+                icon: Icons.auto_awesome,
+                title: 'Use Ready-Made Prompts',
+                description:
+                    'For better results, use the pre-made prompts in the Prompts section. They\'re optimized for Halloween themes!',
+              ),
+              const SizedBox(height: 16),
+
+              _buildHelpTip(
+                icon: Icons.image,
+                title: 'Image-to-Image Mode',
+                description:
+                    'Upload your photo and transform it into a Halloween character. Perfect for creating spooky versions of yourself!',
+              ),
+              const SizedBox(height: 16),
+
+              _buildHelpTip(
+                icon: Icons.local_fire_department,
+                title: 'Token System',
+                description:
+                    'Text-to-image costs 1 token, Image-to-image costs 2 tokens. Watch ads to earn free tokens!',
+              ),
+              const SizedBox(height: 24),
+
+              // Close Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF6A00),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Got it!',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHelpTip({
+    required IconData icon,
+    required String title,
+    required String description,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFF6A00).withOpacity(0.2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: const Color(0xFFFF6A00), size: 20),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                description,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGenerateButtons(MainNavigationProvider provider) {
+    if (provider.activeMode == GenerationMode.image) {
+      // Image to Image Mode - Show FAL AI Generate Button
+      return Consumer<TokenProvider>(
+        builder: (context, tokenProvider, child) {
+          final hasTokens =
+              tokenProvider.balance >= 2.0; // 2 tokens for image-to-image
+          final hasImage =
+              provider.uploadedImage !=
+              null; // Image required for image-to-image
+          final canGenerate =
+              !provider.isGenerating &&
+              provider.prompt.isNotEmpty &&
+              hasTokens &&
+              hasImage;
+
+          return FilledButton.icon(
+            onPressed: canGenerate
+                ? _showFalAiGenerationConfirmationDialog
+                : null,
+            icon: provider.isGenerating
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.psychology),
+            label: Text(
+              provider.isGenerating
+                  ? 'Generating...'
+                  : !hasTokens
+                  ? 'Token Required (2 Tokens)'
+                  : 'Generate Image (2 Tokens)',
+            ),
+            style: FilledButton.styleFrom(
+              backgroundColor: canGenerate
+                  ? const Color(0xFF9C27B0)
+                  : const Color(0xFF4B5563),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+          );
+        },
+      );
+    } else {
+      // Text to Image Mode - Show Regular Generate Button
+      return Consumer<TokenProvider>(
+        builder: (context, tokenProvider, child) {
+          final hasTokens =
+              tokenProvider.balance >= 1.0; // 1 token for text-to-image
+          final canGenerate =
+              !provider.isGenerating && provider.prompt.isNotEmpty && hasTokens;
+
+          return FilledButton.icon(
+            onPressed: canGenerate ? _showGenerationConfirmationDialog : null,
+            icon: provider.isGenerating
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.auto_fix_high),
+            label: Text(
+              provider.isGenerating
+                  ? 'Generating...'
+                  : !hasTokens
+                  ? 'Token Required (1 Token)'
+                  : 'Generate Image (1 Token)',
+            ),
+            style: FilledButton.styleFrom(
+              backgroundColor: canGenerate
+                  ? const Color(0xFFFF6A00)
+                  : const Color(0xFF4B5563),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+          );
+        },
+      );
+    }
   }
 
   Widget _buildModeCard({

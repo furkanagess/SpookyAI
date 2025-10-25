@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-enum GeneratedImageSource { stability, fal }
+enum GeneratedImageSource { fal }
 
 class GeneratedImageResult {
   final Uint8List imageBytes;

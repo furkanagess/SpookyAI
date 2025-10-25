@@ -58,7 +58,7 @@ class _PhotosPageState extends State<PhotosPage> with TickerProviderStateMixin {
 
   Future<void> _showReportDialog(SavedImage image) async {
     final imageBytes = await _getImageBytes(image.id, image.filePath);
-    
+
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => ContentReportDetailPage(
@@ -69,7 +69,7 @@ class _PhotosPageState extends State<PhotosPage> with TickerProviderStateMixin {
         ),
       ),
     );
-    
+
     // Optionally handle the result if needed
     if (result == true) {
       // Report was submitted successfully
@@ -216,6 +216,7 @@ class _PhotosPageState extends State<PhotosPage> with TickerProviderStateMixin {
                               width: double.infinity,
                             ),
                           ),
+                          // Fullscreen button (top right)
                           Positioned(
                             top: 8,
                             right: 8,
@@ -246,6 +247,37 @@ class _PhotosPageState extends State<PhotosPage> with TickerProviderStateMixin {
                                   child: const Icon(
                                     Icons.fullscreen,
                                     color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          // Report button (top left)
+                          Positioned(
+                            top: 8,
+                            left: 8,
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () {
+                                  Navigator.of(context).pop();
+                                  _showReportDialog(image);
+                                },
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.55),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.2),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.report_problem_outlined,
+                                    color: Colors.yellow,
                                     size: 20,
                                   ),
                                 ),
@@ -399,26 +431,6 @@ class _PhotosPageState extends State<PhotosPage> with TickerProviderStateMixin {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      // Report button
-                      SizedBox(
-                        width: double.infinity,
-                        child: TextButton.icon(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            _showReportDialog(image);
-                          },
-                          icon: const Icon(
-                            Icons.report_problem_outlined,
-                            size: 16,
-                          ),
-                          label: const Text('Report Content'),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.white.withOpacity(0.7),
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            textStyle: const TextStyle(fontSize: 12),
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ],
@@ -857,97 +869,6 @@ class _PhotosPageState extends State<PhotosPage> with TickerProviderStateMixin {
                       ],
                     ),
                   ),
-                ),
-              ),
-
-              // Action buttons
-              Positioned(
-                top: 12,
-                right: 12,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Share button
-                    Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () => _shareImage(image.filePath),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.7),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.2),
-                              width: 1,
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.share_rounded,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-
-                    // Delete button
-                    Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () =>
-                            _showDeleteConfirmation(image.id, image.prompt),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(0.8),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.2),
-                              width: 1,
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.delete_rounded,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-
-                    // Report button
-                    Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () => _showReportDialog(image),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: Colors.orange.withOpacity(0.8),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.2),
-                              width: 1,
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.report_problem_rounded,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
               ),
 

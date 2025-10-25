@@ -3,6 +3,243 @@ import '../models/prompt_category.dart';
 class PromptService {
   static const List<PromptCategory> _promptCategories = [
     PromptCategory(
+      id: 'face_transformations',
+      name: 'Face Transformations',
+      icon: '👤',
+      description:
+          'Transform your face with Halloween themes while preserving your features',
+      prompts: [
+        PromptItem(
+          id: 'halloween_ghost',
+          title: 'Halloween Ghost',
+          prompt:
+              'Transform into a stunning Halloween ghost with ethereal white glow, translucent skin, glowing eyes, supernatural aura, ghostly lighting, spectral effects, haunted graveyard background with ancient tombstones, misty fog, moonlight, supernatural atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          isPopular: false,
+          tags: ['ghost', 'halloween', 'ethereal', 'supernatural'],
+        ),
+        PromptItem(
+          id: 'halloween_vampire',
+          title: 'Halloween Vampire',
+          prompt:
+              'Become a mesmerizing Halloween vampire with pale porcelain skin, crimson red eyes, sharp fangs, dark gothic clothing, elegant gothic atmosphere, gothic castle interior background with ornate furniture, candlelit chandeliers, red velvet curtains, mysterious shadows, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          isPopular: false,
+          tags: ['vampire', 'halloween', 'gothic', 'elegant'],
+        ),
+        PromptItem(
+          id: 'halloween_witch',
+          title: 'Halloween Witch',
+          prompt:
+              'Transform into a captivating Halloween witch with pointed black hat, flowing dark robes, magical green aura, spell-casting hands, mystical forest background with ancient trees, floating magical orbs, glowing mushrooms, enchanted atmosphere, magical lighting, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          isPopular: false,
+          tags: ['witch', 'halloween', 'magic', 'mystical'],
+        ),
+        PromptItem(
+          id: 'halloween_zombie',
+          title: 'Halloween Zombie',
+          prompt:
+              'Become a terrifying Halloween zombie with decaying skin, hollow eyes, torn clothing, bloodstains, horror atmosphere, post-apocalyptic cityscape background with destroyed buildings, smoke, debris, dark stormy sky, apocalyptic lighting, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          tags: ['zombie', 'halloween', 'horror', 'decay'],
+        ),
+        PromptItem(
+          id: 'halloween_demon',
+          title: 'Halloween Demon',
+          prompt:
+              'Transform into a fearsome Halloween demon with curved horns, glowing red eyes, dark leather armor, battle scars, infernal lighting, menacing aura, hellish battlefield background with lava rivers, burning rocks, demonic architecture, infernal atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          tags: ['demon', 'halloween', 'battle', 'powerful'],
+        ),
+        PromptItem(
+          id: 'halloween_skeleton',
+          title: 'Halloween Skeleton',
+          prompt:
+              'Become a powerful Halloween skeleton with glowing white bones, dark mystical robes, floating magical orbs, necromantic lighting, arcane energy, ancient necromancer laboratory background with dark stone walls, glowing runes, floating skulls, mystical atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          tags: ['skeleton', 'halloween', 'magic', 'mystical'],
+        ),
+        PromptItem(
+          id: 'halloween_werewolf',
+          title: 'Halloween Werewolf',
+          prompt:
+              'Transform into a savage Halloween werewolf with thick brown fur, razor-sharp claws, glowing yellow eyes, torn clothing, primal lighting, beastly aura, dark forest background with towering trees, full moon, howling wolves silhouette, primal wilderness atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          tags: ['werewolf', 'halloween', 'fierce', 'beast'],
+        ),
+        PromptItem(
+          id: 'halloween_phantom',
+          title: 'Halloween Phantom',
+          prompt:
+              'Become an elegant Halloween phantom with ornate white mask, flowing black cape, ghostly white gloves, ethereal lighting, mysterious presence, grand opera house background with velvet curtains, ornate chandeliers, ghostly mist, theatrical atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          tags: ['phantom', 'halloween', 'mysterious', 'elegant'],
+        ),
+        PromptItem(
+          id: 'halloween_necromancer',
+          title: 'Halloween Necromancer',
+          prompt:
+              'Transform into a sinister Halloween necromancer with black hooded robes, glowing purple staff, floating skulls, shadowy lighting, death magic aura, ancient dark temple background with stone altars, glowing purple crystals, shadowy corners, necromantic atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          tags: ['necromancer', 'halloween', 'shadowy', 'commanding'],
+        ),
+        PromptItem(
+          id: 'halloween_royalty',
+          title: 'Halloween Royalty',
+          prompt:
+              'Become cursed Halloween royalty with golden crown, regal purple robes, glowing cursed jewelry, gothic lighting, supernatural regal aura, gothic throne room background with ornate furniture, royal tapestries, cursed artifacts, regal supernatural atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          tags: ['royalty', 'halloween', 'cursed', 'regal'],
+        ),
+        PromptItem(
+          id: 'halloween_pumpkin',
+          title: 'Halloween Pumpkin',
+          prompt:
+              'Transform into a spooky Halloween pumpkin with glowing orange skin, carved face, flickering candlelight, mystical aura, pumpkin patch background with glowing jack-o-lanterns, autumn leaves, spooky atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          tags: ['pumpkin', 'halloween', 'spooky', 'autumn'],
+        ),
+        PromptItem(
+          id: 'halloween_mummy',
+          title: 'Halloween Mummy',
+          prompt:
+              'Become a terrifying Halloween mummy with ancient bandages, glowing eyes, mystical aura, Egyptian tomb background with hieroglyphs, golden artifacts, mystical lighting, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          tags: ['mummy', 'halloween', 'ancient', 'mystical'],
+        ),
+        PromptItem(
+          id: 'halloween_pirate',
+          title: 'Halloween Pirate',
+          prompt:
+              'Transform into a swashbuckling Halloween pirate with tricorn hat, eye patch, pirate coat, wooden leg, treasure map, pirate ship deck background with sails, ocean waves, treasure chest, nautical atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          tags: ['pirate', 'halloween', 'adventure', 'nautical'],
+        ),
+        PromptItem(
+          id: 'halloween_superhero',
+          title: 'Halloween Superhero',
+          prompt:
+              'Become a powerful Halloween superhero with cape, mask, superhero costume, glowing powers, city skyline background with skyscrapers, night sky, superhero atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          tags: ['superhero', 'halloween', 'powerful', 'heroic'],
+        ),
+        PromptItem(
+          id: 'halloween_robot',
+          title: 'Halloween Robot',
+          prompt:
+              'Transform into a futuristic Halloween robot with metallic skin, glowing circuits, robotic armor, cybernetic enhancements, futuristic laboratory background with high-tech equipment, neon lights, sci-fi atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          tags: ['robot', 'halloween', 'futuristic', 'cybernetic'],
+        ),
+        PromptItem(
+          id: 'halloween_clown',
+          title: 'Halloween Clown',
+          prompt:
+              'Become a creepy Halloween clown with colorful makeup, oversized shoes, polka dot costume, circus tent background with carnival lights, circus atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          tags: ['clown', 'halloween', 'circus', 'colorful'],
+        ),
+        PromptItem(
+          id: 'halloween_fairy',
+          title: 'Halloween Fairy',
+          prompt:
+              'Transform into a magical Halloween fairy with wings, fairy costume, magical sparkles, enchanted forest background with glowing mushrooms, fairy lights, magical atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          tags: ['fairy', 'halloween', 'magical', 'enchanted'],
+        ),
+        PromptItem(
+          id: 'halloween_knight',
+          title: 'Halloween Knight',
+          prompt:
+              'Become a noble Halloween knight with armor, helmet, sword, medieval castle background with stone walls, torches, medieval atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          tags: ['knight', 'halloween', 'medieval', 'noble'],
+        ),
+        PromptItem(
+          id: 'halloween_alien',
+          title: 'Halloween Alien',
+          prompt:
+              'Transform into a mysterious Halloween alien with green skin, antennae, space suit, spaceship interior background with control panels, stars, space atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          tags: ['alien', 'halloween', 'space', 'mysterious'],
+        ),
+        PromptItem(
+          id: 'halloween_sorcerer',
+          title: 'Halloween Sorcerer',
+          prompt:
+              'Become a powerful Halloween sorcerer with wizard hat, robes, magical staff, spellbook, mystical tower background with magical artifacts, floating orbs, magical atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          tags: ['sorcerer', 'halloween', 'magical', 'powerful'],
+        ),
+        PromptItem(
+          id: 'halloween_cyberpunk',
+          title: 'Halloween Cyberpunk',
+          prompt:
+              'Transform into a futuristic Halloween cyberpunk with neon colors, cybernetic implants, futuristic clothing, neon-lit city background with holographic displays, cyberpunk atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          tags: ['cyberpunk', 'halloween', 'futuristic', 'neon'],
+        ),
+        PromptItem(
+          id: 'halloween_steampunk',
+          title: 'Halloween Steampunk',
+          prompt:
+              'Become a Victorian Halloween steampunk with goggles, brass accessories, Victorian clothing, steam-powered machinery background with gears, steam, Victorian atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          tags: ['steampunk', 'halloween', 'victorian', 'mechanical'],
+        ),
+        PromptItem(
+          id: 'halloween_samurai',
+          title: 'Halloween Samurai',
+          prompt:
+              'Transform into a fierce Halloween samurai with armor, katana, traditional clothing, Japanese garden background with cherry blossoms, traditional architecture, martial arts atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          tags: ['samurai', 'halloween', 'martial_arts', 'traditional'],
+        ),
+        PromptItem(
+          id: 'halloween_ninja',
+          title: 'Halloween Ninja',
+          prompt:
+              'Become a stealthy Halloween ninja with black outfit, mask, throwing stars, shadowy rooftop background with city lights, stealth atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          tags: ['ninja', 'halloween', 'stealth', 'shadowy'],
+        ),
+        PromptItem(
+          id: 'halloween_gladiator',
+          title: 'Halloween Gladiator',
+          prompt:
+              'Transform into a powerful Halloween gladiator with armor, helmet, weapons, Roman colosseum background with arena, ancient architecture, gladiator atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          tags: ['gladiator', 'halloween', 'ancient', 'powerful'],
+        ),
+        PromptItem(
+          id: 'halloween_cowboy',
+          title: 'Halloween Cowboy',
+          prompt:
+              'Become a rugged Halloween cowboy with hat, boots, leather vest, wild west saloon background with wooden furniture, desert atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          tags: ['cowboy', 'halloween', 'wild_west', 'rugged'],
+        ),
+        PromptItem(
+          id: 'halloween_astronaut',
+          title: 'Halloween Astronaut',
+          prompt:
+              'Transform into a space Halloween astronaut with space suit, helmet, oxygen tank, space station background with stars, planets, space atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          tags: ['astronaut', 'halloween', 'space', 'futuristic'],
+        ),
+        PromptItem(
+          id: 'halloween_detective',
+          title: 'Halloween Detective',
+          prompt:
+              'Become a mysterious Halloween detective with trench coat, hat, magnifying glass, noir city background with streetlights, fog, detective atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          tags: ['detective', 'halloween', 'noir', 'mysterious'],
+        ),
+        PromptItem(
+          id: 'halloween_doctor',
+          title: 'Halloween Doctor',
+          prompt:
+              'Transform into a mad Halloween doctor with lab coat, stethoscope, medical equipment, laboratory background with test tubes, medical atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          tags: ['doctor', 'halloween', 'medical', 'scientific'],
+        ),
+        PromptItem(
+          id: 'halloween_chef',
+          title: 'Halloween Chef',
+          prompt:
+              'Become a culinary Halloween chef with chef hat, apron, cooking utensils, kitchen background with cooking equipment, culinary atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          tags: ['chef', 'halloween', 'culinary', 'cooking'],
+        ),
+        PromptItem(
+          id: 'halloween_artist',
+          title: 'Halloween Artist',
+          prompt:
+              'Transform into a creative Halloween artist with paint-splattered clothes, paintbrush, easel, art studio background with canvases, artistic atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
+          tags: ['artist', 'halloween', 'creative', 'artistic'],
+        ),
+      ],
+    ),
+    PromptCategory(
+      id: 'costume',
+      name: 'Costume',
+      icon: '🎭',
+      description:
+          'Transform your face with Halloween costumes while preserving your features',
+      prompts: [],
+    ),
+    PromptCategory(
       id: 'halloween',
       name: 'Halloween Magic',
       icon: '🎃',

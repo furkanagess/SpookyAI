@@ -54,7 +54,10 @@ class TokenDisplayWidget extends StatelessWidget {
                     )
                   else
                     Text(
-                      '${tokenProvider.balance}',
+                      tokenProvider.balance ==
+                              tokenProvider.balance.roundToDouble()
+                          ? tokenProvider.balance.round().toString()
+                          : tokenProvider.balance.toStringAsFixed(1),
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: fontSize,

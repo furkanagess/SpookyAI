@@ -7,7 +7,7 @@ publish_to: 'none'
 # Minor: New features, backward compatible  
 # Patch: Bug fixes, backward compatible
 # Build: Incremental build number
-version: 1.0.1+14
+version: 1.1.0+15
 
 environment:
   sdk: ^3.10.0-158.0.dev
@@ -48,6 +48,9 @@ dependencies:
   # In-App Purchases
   in_app_purchase: ^3.1.13
   in_app_purchase_android: ^0.4.0
+  
+  # AdMob Ads
+  google_mobile_ads: ^5.1.0
   in_app_purchase_storekit: ^0.3.7
   
   # Quick Actions (App Shortcuts)

@@ -107,7 +107,7 @@ class _RedesignedSpinWheelState extends State<RedesignedSpinWheel>
         final landedReward = landedSegment.reward;
 
         // Grant tokens and save last reward
-        await TokenService.addTokens(landedReward);
+        await TokenService.addTokens(landedReward as double);
         await SpinService.setLastSpinReward(landedReward);
         try {
           await context.read<TokenProvider>().refreshBalance();

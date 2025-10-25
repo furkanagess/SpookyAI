@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/services/avatar_service.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/widgets/token_display_widget.dart';
+import '../../../../core/widgets/rewarded_ad_widget.dart';
 import '../../../../core/services/saved_images_provider.dart';
 import '../../../../core/services/profile_provider.dart';
 import '../../../../core/theme/app_metrics.dart';
@@ -539,6 +540,13 @@ class _ProfilePageState extends State<ProfilePage>
           ),
           const SizedBox(height: 20),
 
+          // Rewarded Ad Widget
+          const RewardedAdWidget(
+            customMessage:
+                'Watch ads to earn free tokens for image generation!',
+          ),
+          const SizedBox(height: 20),
+
           // Navigation Buttons
           Row(
             children: [
@@ -834,7 +842,7 @@ class _ProfilePageState extends State<ProfilePage>
                             color: Color(0xFFFF6A00),
                           ),
                         )
-                      : Padding(
+                      : SingleChildScrollView(
                           padding: const EdgeInsets.all(16),
                           child: Column(
                             children: [

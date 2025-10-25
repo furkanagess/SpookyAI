@@ -344,7 +344,7 @@ class InAppPurchaseService {
         // Grant tokens based on product ID
         final int? tokens = _productTokenMap[purchaseDetails.productID];
         if (tokens != null) {
-          await TokenService.addTokens(tokens);
+          await TokenService.addTokens(tokens as double);
           debugPrint(
             'Added $tokens tokens for purchase ${purchaseDetails.productID}',
           );
@@ -406,7 +406,7 @@ class InAppPurchaseService {
       try {
         final int? tokens = _productTokenMap[purchaseDetails.productID];
         if (tokens != null) {
-          await TokenService.addTokens(tokens);
+          await TokenService.addTokens(tokens as double);
           debugPrint(
             'Added $tokens tokens for restored purchase ${purchaseDetails.productID}',
           );

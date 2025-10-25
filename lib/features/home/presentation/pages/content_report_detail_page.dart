@@ -128,35 +128,18 @@ class _ContentReportDetailPageState extends State<ContentReportDetailPage>
         opacity: _fadeAnimation,
         child: SlideTransition(
           position: _slideAnimation,
-          child: CustomScrollView(
-            slivers: [
-              // App Bar
-              SliverAppBar(
-                expandedHeight: 120,
-                floating: false,
-                pinned: true,
+          child: Column(
+            children: [
+              // Default App Bar
+              AppBar(
                 backgroundColor: const Color(0xFF0F0B1A),
-                leading: IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-                ),
-                flexibleSpace: FlexibleSpaceBar(
-                  title: const Text(
-                    'Report Content',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  background: Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Color(0xFF0F0B1A), Color(0xFF1D162B)],
-                      ),
-                    ),
+                foregroundColor: Colors.white,
+                title: const Text(
+                  'Report Content',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 actions: [
@@ -176,42 +159,44 @@ class _ContentReportDetailPageState extends State<ContentReportDetailPage>
               ),
 
               // Content
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header Card
-                      _buildHeaderCard(),
-                      const SizedBox(height: 32),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header Card
+                        _buildHeaderCard(),
+                        const SizedBox(height: 32),
 
-                      // Content Preview
-                      _buildContentPreview(),
-                      const SizedBox(height: 32),
+                        // Content Preview
+                        _buildContentPreview(),
+                        const SizedBox(height: 32),
 
-                      // Category Selection
-                      _buildCategorySection(),
-                      const SizedBox(height: 32),
+                        // Category Selection
+                        _buildCategorySection(),
+                        const SizedBox(height: 32),
 
-                      // Reason Selection
-                      if (_selectedCategory != null) ...[
-                        _buildReasonSection(),
+                        // Reason Selection
+                        if (_selectedCategory != null) ...[
+                          _buildReasonSection(),
+                          const SizedBox(height: 32),
+                        ],
+
+                        // Additional Details
+                        _buildDetailsSection(),
+                        const SizedBox(height: 32),
+
+                        // Policy Information
+                        _buildPolicySection(),
+                        const SizedBox(height: 32),
+
+                        // Action Buttons
+                        _buildActionButtons(),
                         const SizedBox(height: 32),
                       ],
-
-                      // Additional Details
-                      _buildDetailsSection(),
-                      const SizedBox(height: 32),
-
-                      // Policy Information
-                      _buildPolicySection(),
-                      const SizedBox(height: 32),
-
-                      // Action Buttons
-                      _buildActionButtons(),
-                      const SizedBox(height: 32),
-                    ],
+                    ),
                   ),
                 ),
               ),
