@@ -132,11 +132,7 @@ class _RewardedAdWidgetState extends State<RewardedAdWidget> {
                       ),
                     ),
                     Text(
-                      'Earn 0.5 tokens per ad • $_remainingAds ads left today${Platform.isAndroid
-                          ? ' (Android)'
-                          : Platform.isIOS
-                          ? ' (iOS)'
-                          : ''}',
+                      'Earn 0.5 tokens per ad • $_remainingAds ads left today ',
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.8),
                         fontSize: 10,

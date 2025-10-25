@@ -19,6 +19,7 @@ import 'core/services/prompt_input_provider.dart';
 import 'core/services/in_app_purchase_service.dart';
 import 'core/services/quick_actions_service.dart';
 import 'core/services/admob_service.dart';
+import 'core/services/version_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -60,6 +61,9 @@ void main() async {
 
   // Initialize AdMob
   await AdMobService.initialize();
+
+  // Initialize version service
+  await VersionService.getVersionInfo();
 
   runApp(const GhostfaceApp());
 }

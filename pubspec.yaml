@@ -61,6 +61,9 @@ dependencies:
   
   # Environment Variables
   flutter_dotenv: ^5.1.0
+  
+  # App Info & Version
+  package_info_plus: ^8.0.0
 
 # Development Dependencies
 dev_dependencies:

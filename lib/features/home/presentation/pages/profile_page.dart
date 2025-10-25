@@ -7,6 +7,7 @@ import '../../../../core/widgets/token_display_widget.dart';
 import '../../../../core/widgets/rewarded_ad_widget.dart';
 import '../../../../core/services/saved_images_provider.dart';
 import '../../../../core/services/profile_provider.dart';
+import '../../../../core/services/version_service.dart';
 import '../../../../core/theme/app_metrics.dart';
 import '../widgets/image_selection_dialog.dart';
 import 'spin_page.dart';
@@ -849,11 +850,105 @@ class _ProfilePageState extends State<ProfilePage>
                               _buildProfileHeader(provider),
                               const SizedBox(height: 20),
                               _buildActionsSection(provider),
+                              const SizedBox(height: 20),
+                              _buildVersionInfo(),
                               const SizedBox(height: 20), // Bottom padding
                             ],
                           ),
                         ),
                 ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildVersionInfo() {
+    return FutureBuilder<Map<String, String>>(
+      future: VersionService.getVersionInfo(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const SizedBox.shrink();
+        }
+
+        final versionInfo = snapshot.data!;
+        final version = versionInfo['version'] ?? '1.1.0';
+        final buildNumber = versionInfo['buildNumber'] ?? '15';
+        final isDebug = versionInfo['isDebug'] == 'true';
+        final platform = versionInfo['platform'] ?? 'SpookyAI';
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1D162B).withOpacity(0.5),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: Colors.white.withOpacity(0.7),
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Version $version ($buildNumber)',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  if (isDebug) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: Colors.orange.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        'DEBUG',
+                        style: TextStyle(
+                          color: Colors.orange,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'SpookyAI - AI-Powered Halloween Image Generator',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.5),
+                  fontSize: 10,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Build $buildNumber • $platform',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.4),
+                  fontSize: 9,
+                ),
+                textAlign: TextAlign.center,
               ),
             ],
           ),
