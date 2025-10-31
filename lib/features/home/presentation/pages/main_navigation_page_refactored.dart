@@ -367,7 +367,7 @@ class _MainNavigationPageRefactoredState
 
                 // Title
                 const Text(
-                  'Confirm FAL AI Generation',
+                  'Confirm Image Generation',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -378,7 +378,7 @@ class _MainNavigationPageRefactoredState
 
                 // Description
                 const Text(
-                  'Generate image using FAL AI FLUX Schnell model with ultra-fast processing.',
+                  'Generate your image using AI with optimal quality and speed.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Color(0xFF8C7BA6),

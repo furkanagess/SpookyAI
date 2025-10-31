@@ -37,7 +37,7 @@ class NotificationService {
   static const String networkError =
       'Network error. Please check your connection.';
   static const String apiKeyRequired =
-      'FAL AI API key is required. Please add your API key.';
+      'Image generation API key is required. Please add your API key.';
   static const String outOfTokens = 'Out of tokens. Purchase more to continue.';
   static const String generationFailed =
       'Image generation failed. Please try again.';

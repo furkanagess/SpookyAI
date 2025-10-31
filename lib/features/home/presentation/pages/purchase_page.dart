@@ -64,9 +64,9 @@ class _PurchasePageState extends State<PurchasePage> {
         debugPrint('PurchasePage: Purchase failed for ${pack.name}');
 
         // Check if this was a user cancellation (don't show error dialog)
-        final isUserCancelled =
-            InAppPurchaseService.queryProductError?.contains('cancelled') ??
-            false;
+        final bool isUserCancelled =
+            InAppPurchaseService.lastPurchaseCancelled ||
+            (InAppPurchaseService.queryProductError?.contains('cancelled') ?? false);
 
         if (!isUserCancelled) {
           await PurchaseFailedDialog.show(

@@ -36,6 +36,7 @@ class InAppPurchaseService {
   static String? _queryProductError;
   // static String? _lastPurchaseProductId;
   static bool _lastPurchaseSuccess = false;
+  static bool _lastPurchaseCancelled = false;
   static final Set<String> _processedTransactions = <String>{};
   static const String _processedTxStorageKey = 'processed_purchases_v1';
   static bool _allowConsumableGrantOnNextRestore = false;
@@ -43,6 +44,7 @@ class InAppPurchaseService {
   static bool get isAvailable => _isAvailable;
   static bool get purchasePending => _purchasePending;
   static bool get lastPurchaseSuccess => _lastPurchaseSuccess;
+  static bool get lastPurchaseCancelled => _lastPurchaseCancelled;
   static String? get queryProductError => _queryProductError;
   static List<ProductDetails> get products => _products;
 
@@ -246,6 +248,7 @@ class InAppPurchaseService {
 
     _purchasePending = true;
     _lastPurchaseSuccess = false;
+    _lastPurchaseCancelled = false;
 
     try {
       final PurchaseParam purchaseParam = PurchaseParam(
@@ -393,6 +396,7 @@ class InAppPurchaseService {
 
         // Mark purchase as successful
         _lastPurchaseSuccess = true;
+        _lastPurchaseCancelled = false;
         await _markTransactionProcessed(txKey);
         debugPrint('Purchase marked as successful');
       } catch (e) {
@@ -413,16 +417,20 @@ class InAppPurchaseService {
         if (errorCode == 'user_cancelled' || errorCode == 'payment_cancelled') {
           debugPrint('iOS: User cancelled purchase - not marking as failure');
           _lastPurchaseSuccess = false;
+          _lastPurchaseCancelled = true;
         } else {
           debugPrint('iOS: Actual purchase error - marking as failure');
           _lastPurchaseSuccess = false;
+          _lastPurchaseCancelled = false;
         }
       } else {
         _lastPurchaseSuccess = false;
+        _lastPurchaseCancelled = false;
       }
     } else if (purchaseDetails.status == PurchaseStatus.canceled) {
       debugPrint('Purchase canceled for ${purchaseDetails.productID}');
       _lastPurchaseSuccess = false;
+      _lastPurchaseCancelled = true;
     } else if (purchaseDetails.status == PurchaseStatus.pending) {
       debugPrint('Purchase pending for ${purchaseDetails.productID}');
       // Don't mark as failed yet, wait for final status
