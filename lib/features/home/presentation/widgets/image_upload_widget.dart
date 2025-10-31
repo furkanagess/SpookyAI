@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class ImageUploadWidget extends StatelessWidget {
   const ImageUploadWidget({
@@ -14,8 +15,36 @@ class ImageUploadWidget extends StatelessWidget {
   final VoidCallback onImageRemoved;
   final Uint8List? uploadedImage;
 
+  Future<bool> _ensurePermission(ImageSource source) async {
+    if (source == ImageSource.camera) {
+      final status = await Permission.camera.request();
+      return status.isGranted;
+    } else {
+      // Gallery/photos permission differs per platform; handle broadly
+      if (await Permission.photos.isGranted || await Permission.photos.request().isGranted) {
+        return true;
+      }
+      // Fallback to storage for older Androids
+      final storageStatus = await Permission.storage.request();
+      return storageStatus.isGranted;
+    }
+  }
+
   Future<void> _pickImage(ImageSource source, BuildContext context) async {
     try {
+      final granted = await _ensurePermission(source);
+      if (!granted) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Permission required to access camera/gallery.'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+        return;
+      }
       final ImagePicker picker = ImagePicker();
       final XFile? image = await picker.pickImage(
         source: source,

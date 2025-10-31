@@ -48,6 +48,9 @@
 	<!-- Permissions for photo library access -->
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app needs access to your photo library to save and share your spooky creations.</string>
+	<!-- Camera permission for capturing images -->
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs camera access to capture photos for image-to-image generation.</string>
 	
 	<!-- AdMob App ID -->
 	<key>GADApplicationIdentifier</key>
