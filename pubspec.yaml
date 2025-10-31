@@ -7,7 +7,7 @@ publish_to: 'none'
 # Minor: New features, backward compatible  
 # Patch: Bug fixes, backward compatible
 # Build: Incremental build number
-version: 1.1.0+15
+version: 1.1.1+16
 
 environment:
   sdk: ^3.10.0-158.0.dev

@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import '../services/token_service.dart';
 import '../services/premium_service.dart';
 import '../services/in_app_purchase_service.dart';
 import '../services/android_purchase_service.dart';
@@ -170,8 +169,6 @@ class PurchaseProvider extends ChangeNotifier {
         // Handle premium subscription differently
         if (pack.isPremium) {
           await PremiumService.activatePremiumSubscription();
-          await TokenService.grantMonthlyPremiumTokens();
-          await TokenService.markMonthlyTokensClaimed();
           setPremiumStatus(true);
         } else {
           // Regular token purchase - refresh token provider

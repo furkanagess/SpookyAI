@@ -7,7 +7,8 @@ class PromptService {
       id: 'text_to_image',
       name: 'Text to Image',
       icon: '🎨',
-      description: 'Generate Halloween scenes and characters from text descriptions',
+      description:
+          'Generate Halloween scenes and characters from text descriptions',
       prompts: [
         // Halloween Scenes
         PromptItem(
@@ -51,7 +52,14 @@ class PromptService {
           title: 'Trick-or-Treat Block Party',
           prompt:
               'A lively Halloween neighborhood block party at dusk: rows of townhouses draped in fake cobwebs and paper bats, porches stacked with jack-o-lanterns carved in intricate patterns, strings of orange fairy lights zigzagging over the street. Children in elaborate costumes (witches with pointed hats, tiny vampires with capes, astronauts with reflective visors) dart between doorsteps, pumpkin pails swinging. Parents chat in small clusters holding steaming cups of cider. A fog machine wafts low-lying mist along the asphalt, reflective wet leaves glimmer in the glow. Warm porch light meets cool blue twilight; soft depth-of-field and cinematic grain, gentle lens flare from a streetlamp, cozy yet spooky atmosphere.',
-          tags: ['street', 'party', 'kids', 'pumpkins', 'neighborhood', 'scene'],
+          tags: [
+            'street',
+            'party',
+            'kids',
+            'pumpkins',
+            'neighborhood',
+            'scene',
+          ],
           promptType: PromptType.textToImage,
         ),
         PromptItem(
@@ -59,10 +67,17 @@ class PromptService {
           title: 'Haunted Front Porch Row',
           prompt:
               'A row of vintage wooden porches decorated for Halloween on a narrow residential street: creaking steps, crepe-paper streamers fluttering in the breeze, witch silhouettes taped to windows, black-cat cutouts perched on railings. Carved pumpkins of all sizes emit flickering candlelight; a bowl of candy corn sits on a small table next to a brass door knocker shaped like a skull. Paper lanterns dangle overhead, gently swaying. Fallen maple leaves gather on the steps, their reds and oranges glowing under a warm porch bulb, while the background fades into cool twilight blue. Framing emphasizes the repeating porches; subtle film grain and shallow depth of field for a nostalgic seasonal vibe.',
-          tags: ['porch', 'pumpkins', 'lanterns', 'leaves', 'nostalgic', 'scene'],
+          tags: [
+            'porch',
+            'pumpkins',
+            'lanterns',
+            'leaves',
+            'nostalgic',
+            'scene',
+          ],
           promptType: PromptType.textToImage,
         ),
-        
+
         // Fantasy Characters
         PromptItem(
           id: 'dragon_lair',
@@ -115,7 +130,7 @@ class PromptService {
           tags: ['unicorn', 'meadow', 'rainbow', 'fantasy'],
           promptType: PromptType.textToImage,
         ),
-        
+
         // Horror Characters
         PromptItem(
           id: 'zombie_apocalypse',
@@ -149,7 +164,8 @@ class PromptService {
       id: 'image_to_image',
       name: 'Image to Image',
       icon: '👤',
-      description: 'Transform your face with Halloween themes while preserving your features',
+      description:
+          'Transform your face with Halloween themes while preserving your features',
       prompts: [
         // Classic Halloween Characters
         PromptItem(
@@ -211,7 +227,7 @@ class PromptService {
           tags: ['mummy', 'halloween', 'ancient', 'mystical', 'classic'],
           promptType: PromptType.imageToImage,
         ),
-        
+
         // Supernatural Beings
         PromptItem(
           id: 'halloween_demon',
@@ -234,7 +250,13 @@ class PromptService {
           title: 'Halloween Phantom',
           prompt:
               'Become an elegant Halloween phantom with ornate white mask, flowing black cape, ghostly white gloves, ethereal lighting, mysterious presence, grand opera house background with velvet curtains, ornate chandeliers, ghostly mist, theatrical atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
-          tags: ['phantom', 'halloween', 'mysterious', 'elegant', 'supernatural'],
+          tags: [
+            'phantom',
+            'halloween',
+            'mysterious',
+            'elegant',
+            'supernatural',
+          ],
           promptType: PromptType.imageToImage,
         ),
         PromptItem(
@@ -242,10 +264,16 @@ class PromptService {
           title: 'Halloween Necromancer',
           prompt:
               'Transform into a sinister Halloween necromancer with black hooded robes, glowing purple staff, floating skulls, shadowy lighting, death magic aura, ancient dark temple background with stone altars, glowing purple crystals, shadowy corners, necromantic atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
-          tags: ['necromancer', 'halloween', 'shadowy', 'commanding', 'supernatural'],
+          tags: [
+            'necromancer',
+            'halloween',
+            'shadowy',
+            'commanding',
+            'supernatural',
+          ],
           promptType: PromptType.imageToImage,
         ),
-        
+
         // Royalty & Nobility
         PromptItem(
           id: 'halloween_royalty',
@@ -263,7 +291,7 @@ class PromptService {
           tags: ['knight', 'halloween', 'medieval', 'noble', 'nobility'],
           promptType: PromptType.imageToImage,
         ),
-        
+
         // Adventure & Action
         PromptItem(
           id: 'halloween_pirate',
@@ -294,7 +322,13 @@ class PromptService {
           title: 'Halloween Samurai',
           prompt:
               'Transform into a fierce Halloween samurai with armor, katana, traditional clothing, Japanese garden background with cherry blossoms, traditional architecture, martial arts atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
-          tags: ['samurai', 'halloween', 'martial_arts', 'traditional', 'action'],
+          tags: [
+            'samurai',
+            'halloween',
+            'martial_arts',
+            'traditional',
+            'action',
+          ],
           promptType: PromptType.imageToImage,
         ),
         PromptItem(
@@ -305,7 +339,7 @@ class PromptService {
           tags: ['gladiator', 'halloween', 'ancient', 'powerful', 'action'],
           promptType: PromptType.imageToImage,
         ),
-        
+
         // Sci-Fi & Futuristic
         PromptItem(
           id: 'halloween_robot',
@@ -339,14 +373,20 @@ class PromptService {
           tags: ['cyberpunk', 'halloween', 'futuristic', 'neon', 'scifi'],
           promptType: PromptType.imageToImage,
         ),
-        
+
         // Steampunk & Vintage
         PromptItem(
           id: 'halloween_steampunk',
           title: 'Halloween Steampunk',
           prompt:
               'Become a Victorian Halloween steampunk with goggles, brass accessories, Victorian clothing, steam-powered machinery background with gears, steam, Victorian atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
-          tags: ['steampunk', 'halloween', 'victorian', 'mechanical', 'vintage'],
+          tags: [
+            'steampunk',
+            'halloween',
+            'victorian',
+            'mechanical',
+            'vintage',
+          ],
           promptType: PromptType.imageToImage,
         ),
         PromptItem(
@@ -357,7 +397,7 @@ class PromptService {
           tags: ['detective', 'halloween', 'noir', 'mysterious', 'vintage'],
           promptType: PromptType.imageToImage,
         ),
-        
+
         // Fantasy & Magic
         PromptItem(
           id: 'halloween_sorcerer',
@@ -375,7 +415,7 @@ class PromptService {
           tags: ['fairy', 'halloween', 'magical', 'enchanted', 'fantasy'],
           promptType: PromptType.imageToImage,
         ),
-        
+
         // Circus & Entertainment
         PromptItem(
           id: 'halloween_clown',
@@ -385,7 +425,7 @@ class PromptService {
           tags: ['clown', 'halloween', 'circus', 'colorful', 'entertainment'],
           promptType: PromptType.imageToImage,
         ),
-        
+
         // Western & Adventure
         PromptItem(
           id: 'halloween_cowboy',
@@ -395,14 +435,20 @@ class PromptService {
           tags: ['cowboy', 'halloween', 'wild_west', 'rugged', 'western'],
           promptType: PromptType.imageToImage,
         ),
-        
+
         // Professional & Modern
         PromptItem(
           id: 'halloween_doctor',
           title: 'Halloween Doctor',
           prompt:
               'Transform into a mad Halloween doctor with lab coat, stethoscope, medical equipment, laboratory background with test tubes, medical atmosphere, cinematic lighting, dramatic shadows, photorealistic, high quality, professional photography, keep exact same face, preserve facial features, maintain face identity, same person, identical face',
-          tags: ['doctor', 'halloween', 'medical', 'scientific', 'professional'],
+          tags: [
+            'doctor',
+            'halloween',
+            'medical',
+            'scientific',
+            'professional',
+          ],
           promptType: PromptType.imageToImage,
         ),
         PromptItem(
@@ -462,13 +508,17 @@ class PromptService {
   }
 
   // Get prompts by subcategory
-  static List<PromptItem> getTextToImagePromptsBySubcategory(String subcategory) {
+  static List<PromptItem> getTextToImagePromptsBySubcategory(
+    String subcategory,
+  ) {
     return getTextToImagePrompts()
         .where((prompt) => prompt.tags.contains(subcategory))
         .toList();
   }
 
-  static List<PromptItem> getImageToImagePromptsBySubcategory(String subcategory) {
+  static List<PromptItem> getImageToImagePromptsBySubcategory(
+    String subcategory,
+  ) {
     return getImageToImagePrompts()
         .where((prompt) => prompt.tags.contains(subcategory))
         .toList();
@@ -480,7 +530,18 @@ class PromptService {
   }
 
   static List<String> getImageToImageSubcategories() {
-    return ['classic', 'supernatural', 'nobility', 'action', 'scifi', 'vintage', 'fantasy', 'entertainment', 'western', 'professional'];
+    return [
+      'classic',
+      'supernatural',
+      'nobility',
+      'action',
+      'scifi',
+      'vintage',
+      'fantasy',
+      'entertainment',
+      'western',
+      'professional',
+    ];
   }
 
   static List<PromptItem> searchPrompts(String query) {

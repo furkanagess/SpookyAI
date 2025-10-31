@@ -23,16 +23,21 @@ class _PromptsPageState extends State<PromptsPage>
     with TickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
+  String? _selectedSubcategory;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(
-      length:
-          PromptService.getAllCategories().length +
-          2, // +1 for Popular, +1 for My Prompts
+      length: 4, // Text to Image, Image to Image, Popular, My Prompts
       vsync: this,
     );
+    _tabController.addListener(() {
+      // Reset subcategory filter when switching tabs
+      setState(() {
+        _selectedSubcategory = null;
+      });
+    });
     // Load data through provider
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<PromptsProvider>().loadUserPrompts();
@@ -60,9 +65,65 @@ class _PromptsPageState extends State<PromptsPage>
     if (widget.onPromptSelected != null) {
       widget.onPromptSelected!(prompt.prompt);
     } else {
-      // Show prompt details or copy to clipboard
-      _showPromptDialog(prompt);
+      // Navigate based on prompt type
+      if (prompt.promptType == PromptType.imageToImage) {
+        _navigateToImageToImage(prompt.prompt);
+      } else {
+        // Navigate to text-to-image mode
+        _navigateToTextToImage(prompt.prompt);
+      }
     }
+  }
+
+  void _navigateToImageToImage(String prompt) {
+    // Navigate to the main navigation page with image-to-image mode
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      '/main',
+      (route) => false,
+      arguments: {'mode': 'image', 'prompt': prompt},
+    );
+  }
+
+  void _navigateToTextToImage(String prompt) {
+    // Navigate to the main navigation page with text-to-image mode
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      '/main',
+      (route) => false,
+      arguments: {'mode': 'text', 'prompt': prompt},
+    );
+  }
+
+  Widget _buildSubcategoryChip(String label, String? subcategory) {
+    final isSelected = _selectedSubcategory == subcategory;
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      child: FilterChip(
+        label: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : const Color(0xFF8C7BA6),
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+          ),
+        ),
+        selected: isSelected,
+        onSelected: (selected) {
+          setState(() {
+            _selectedSubcategory = selected ? subcategory : null;
+          });
+        },
+        backgroundColor: const Color(0xFF1D162B),
+        selectedColor: const Color(0xFFFF6A00),
+        checkmarkColor: Colors.white,
+        side: BorderSide(
+          color: isSelected
+              ? const Color(0xFFFF6A00)
+              : const Color(0xFF8C7BA6).withOpacity(0.3),
+          width: 1,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+    );
   }
 
   void _onUserPromptTap(UserPrompt prompt, PromptsProvider provider) async {
@@ -75,59 +136,6 @@ class _PromptsPageState extends State<PromptsPage>
       // Show prompt details or copy to clipboard
       _showUserPromptDialog(prompt);
     }
-  }
-
-  void _showPromptDialog(PromptItem prompt) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1D162B),
-        title: Text(
-          prompt.title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                prompt.prompt,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 14,
-                  height: 1.4,
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text(
-              'Close',
-              style: TextStyle(color: Color(0xFF8C7BA6)),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _onPromptTap(prompt, context.read<PromptsProvider>());
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF6A00),
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Use Prompt'),
-          ),
-        ],
-      ),
-    );
   }
 
   void _showUserPromptDialog(UserPrompt prompt) {
@@ -506,11 +514,10 @@ class _PromptsPageState extends State<PromptsPage>
                         fontWeight: FontWeight.w400,
                       ),
                       tabs: [
+                        const Tab(text: 'Text to Image'),
+                        const Tab(text: 'Image to Image'),
                         const Tab(text: 'Popular'),
                         const Tab(text: 'My Prompts'),
-                        ...PromptService.getAllCategories().map(
-                          (category) => Tab(text: category.name),
-                        ),
                       ],
                     ),
                   ),
@@ -574,10 +581,93 @@ class _PromptsPageState extends State<PromptsPage>
     return TabBarView(
       controller: _tabController,
       children: [
+        _buildTextToImagePrompts(provider),
+        _buildImageToImagePrompts(provider),
         _buildPopularPrompts(provider),
         _buildMyPrompts(provider),
-        ...provider.getAllCategories().map(
-          (category) => _buildCategoryContent(category, provider),
+      ],
+    );
+  }
+
+  Widget _buildTextToImagePrompts(PromptsProvider provider) {
+    final textToImagePrompts = _selectedSubcategory != null
+        ? PromptService.getTextToImagePromptsBySubcategory(
+            _selectedSubcategory!,
+          )
+        : PromptService.getTextToImagePrompts();
+
+    return Column(
+      children: [
+        // Subcategory filter chips
+        Container(
+          height: 50,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              _buildSubcategoryChip('All', null),
+              ...PromptService.getTextToImageSubcategories().map(
+                (subcategory) => _buildSubcategoryChip(
+                  subcategory.substring(0, 1).toUpperCase() +
+                      subcategory.substring(1),
+                  subcategory,
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Prompts list
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: textToImagePrompts.length,
+            itemBuilder: (context, index) {
+              final prompt = textToImagePrompts[index];
+              return _buildPromptCard(prompt, provider);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildImageToImagePrompts(PromptsProvider provider) {
+    final imageToImagePrompts = _selectedSubcategory != null
+        ? PromptService.getImageToImagePromptsBySubcategory(
+            _selectedSubcategory!,
+          )
+        : PromptService.getImageToImagePrompts();
+
+    return Column(
+      children: [
+        // Subcategory filter chips
+        Container(
+          height: 50,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              _buildSubcategoryChip('All', null),
+              ...PromptService.getImageToImageSubcategories().map(
+                (subcategory) => _buildSubcategoryChip(
+                  subcategory.substring(0, 1).toUpperCase() +
+                      subcategory.substring(1),
+                  subcategory,
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Prompts list
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: imageToImagePrompts.length,
+            itemBuilder: (context, index) {
+              final prompt = imageToImagePrompts[index];
+              return _buildPromptCard(prompt, provider);
+            },
+          ),
         ),
       ],
     );
@@ -671,20 +761,6 @@ class _PromptsPageState extends State<PromptsPage>
     );
   }
 
-  Widget _buildCategoryContent(
-    PromptCategory category,
-    PromptsProvider provider,
-  ) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: category.prompts.length,
-      itemBuilder: (context, index) {
-        final prompt = category.prompts[index];
-        return _buildPromptCard(prompt, provider);
-      },
-    );
-  }
-
   Widget _buildPromptCard(PromptItem prompt, PromptsProvider provider) {
     final isPremiumPrompt = provider.isPromptPremium(prompt);
     final isLocked = provider.isPromptLocked(prompt);
@@ -717,15 +793,29 @@ class _PromptsPageState extends State<PromptsPage>
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFFFF6A00), Color(0xFF9C27B0)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
+                          gradient: prompt.promptType == PromptType.imageToImage
+                              ? const LinearGradient(
+                                  colors: [
+                                    Color(0xFFFF6A00),
+                                    Color(0xFF9C27B0),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                )
+                              : const LinearGradient(
+                                  colors: [
+                                    Color(0xFF9C27B0),
+                                    Color(0xFF2196F3),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(
-                          Icons.auto_fix_high,
+                        child: Icon(
+                          prompt.promptType == PromptType.imageToImage
+                              ? Icons.face_retouching_natural
+                              : Icons.auto_fix_high,
                           color: Colors.white,
                           size: 20,
                         ),
@@ -745,6 +835,40 @@ class _PromptsPageState extends State<PromptsPage>
                             ),
                             Row(
                               children: [
+                                // Prompt type indicator
+                                Container(
+                                  margin: const EdgeInsets.only(right: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        prompt.promptType ==
+                                            PromptType.imageToImage
+                                        ? const Color(
+                                            0xFFFF6A00,
+                                          ).withOpacity(0.2)
+                                        : const Color(
+                                            0xFF2196F3,
+                                          ).withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    prompt.promptType == PromptType.imageToImage
+                                        ? 'Image to Image'
+                                        : 'Text to Image',
+                                    style: TextStyle(
+                                      color:
+                                          prompt.promptType ==
+                                              PromptType.imageToImage
+                                          ? const Color(0xFFFF6A00)
+                                          : const Color(0xFF2196F3),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
                                 if (prompt.isPopular)
                                   Container(
                                     margin: const EdgeInsets.only(right: 6),

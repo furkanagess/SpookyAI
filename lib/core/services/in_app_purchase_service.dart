@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:in_app_purchase_storekit/store_kit_wrappers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'token_service.dart';
 import 'premium_service.dart';
 
@@ -35,6 +36,9 @@ class InAppPurchaseService {
   static String? _queryProductError;
   // static String? _lastPurchaseProductId;
   static bool _lastPurchaseSuccess = false;
+  static final Set<String> _processedTransactions = <String>{};
+  static const String _processedTxStorageKey = 'processed_purchases_v1';
+  static bool _allowConsumableGrantOnNextRestore = false;
 
   static bool get isAvailable => _isAvailable;
   static bool get purchasePending => _purchasePending;
@@ -73,6 +77,16 @@ class InAppPurchaseService {
 
       // Load products with retry logic
       await _loadProductsWithRetry();
+
+      // Warm processed tx cache from disk
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final stored = prefs.getStringList(_processedTxStorageKey) ?? const [];
+        _processedTransactions.addAll(stored);
+        debugPrint(
+          'InAppPurchaseService: Loaded processed tx count: ${_processedTransactions.length}',
+        );
+      } catch (_) {}
     } catch (e) {
       debugPrint('InAppPurchaseService: Initialization error: $e');
       _isAvailable = false;
@@ -335,18 +349,30 @@ class InAppPurchaseService {
     debugPrint('Transaction date: ${purchaseDetails.transactionDate}');
     debugPrint('Platform: ${defaultTargetPlatform}');
 
+    // Build a stable transaction key to guard against duplicate processing
+    final String txKey = await _buildStableTransactionKey(purchaseDetails);
+    if (_processedTransactions.contains(txKey)) {
+      debugPrint(
+        'InAppPurchaseService: Skipping duplicate processing for transaction $txKey',
+      );
+      _purchasePending = false;
+      return;
+    }
+
     if (purchaseDetails.status == PurchaseStatus.purchased) {
       debugPrint(
         'Purchase successful for product: ${purchaseDetails.productID}',
       );
 
       try {
-        // Grant tokens based on product ID
+        // Grant tokens based on product ID (consumables only)
         final int? tokens = _productTokenMap[purchaseDetails.productID];
         if (tokens != null) {
-          await TokenService.addTokens(tokens as double);
+          // Halve in-app token grant to avoid double credit (Play Store + app)
+          final double halfTokens = tokens.toDouble() / 2.0;
+          await TokenService.addTokens(halfTokens);
           debugPrint(
-            'Added $tokens tokens for purchase ${purchaseDetails.productID}',
+            'Added ${halfTokens.toStringAsFixed(2)} tokens (halved from $tokens) for purchase ${purchaseDetails.productID}',
           );
         } else if (purchaseDetails.productID == 'spookyai_premium') {
           // Premium subscription purchase
@@ -367,6 +393,7 @@ class InAppPurchaseService {
 
         // Mark purchase as successful
         _lastPurchaseSuccess = true;
+        await _markTransactionProcessed(txKey);
         debugPrint('Purchase marked as successful');
       } catch (e) {
         debugPrint('Error processing successful purchase: $e');
@@ -404,17 +431,25 @@ class InAppPurchaseService {
       debugPrint('Purchase restored for ${purchaseDetails.productID}');
       // Handle restored purchases - treat as success
       try {
+        // For restore: only grant consumables if explicitly enabled once (e.g., after Play Store promo redemption)
         final int? tokens = _productTokenMap[purchaseDetails.productID];
         if (tokens != null) {
-          await TokenService.addTokens(tokens as double);
-          debugPrint(
-            'Added $tokens tokens for restored purchase ${purchaseDetails.productID}',
-          );
+          if (_allowConsumableGrantOnNextRestore) {
+            final double halfTokens = tokens.toDouble() / 2.0;
+            await TokenService.addTokens(halfTokens);
+            _allowConsumableGrantOnNextRestore = false; // one-shot
+            debugPrint(
+              'Restored consumable via explicit grant: added ${halfTokens.toStringAsFixed(2)} tokens for ${purchaseDetails.productID}',
+            );
+          } else {
+            debugPrint('Skipping consumable grant on restore (not enabled)');
+          }
         } else if (purchaseDetails.productID == 'spookyai_premium') {
           await PremiumService.activatePremiumSubscription();
           debugPrint('Premium subscription restored');
         }
         _lastPurchaseSuccess = true;
+        await _markTransactionProcessed(txKey);
       } catch (e) {
         debugPrint('Error processing restored purchase: $e');
         _lastPurchaseSuccess = false;
@@ -426,6 +461,44 @@ class InAppPurchaseService {
     debugPrint(
       'Purchase handling completed for ${purchaseDetails.productID} - Success: $_lastPurchaseSuccess',
     );
+  }
+
+  static Future<String> _buildStableTransactionKey(
+    PurchaseDetails purchaseDetails,
+  ) async {
+    // Use platform-stable identifiers where possible
+    final String product = purchaseDetails.productID;
+    final String vData =
+        purchaseDetails.verificationData.serverVerificationData;
+    final String? pId = purchaseDetails.purchaseID;
+
+    // Prefer verification data (contains purchase token on Android, transaction receipt on iOS)
+    if (vData.isNotEmpty) {
+      return 'v1::$product::${vData.hashCode}';
+    }
+    if (pId != null && pId.trim().isNotEmpty) {
+      return 'v1::$product::${pId.trim()}';
+    }
+    final String fallback =
+        purchaseDetails.transactionDate ?? DateTime.now().toIso8601String();
+    return 'v1::$product::fallback::$fallback';
+  }
+
+  static Future<void> _markTransactionProcessed(String txKey) async {
+    _processedTransactions.add(txKey);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = prefs.getStringList(_processedTxStorageKey) ?? <String>[];
+      if (!list.contains(txKey)) {
+        list.add(txKey);
+        await prefs.setStringList(_processedTxStorageKey, list);
+      }
+    } catch (_) {}
+  }
+
+  // Public API: enable one-time consumable token grant on next restore
+  static void enableConsumableGrantOnNextRestore() {
+    _allowConsumableGrantOnNextRestore = true;
   }
 
   static Future<void> restorePurchases() async {

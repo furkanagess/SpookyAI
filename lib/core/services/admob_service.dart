@@ -84,14 +84,16 @@ class AdMobService {
   /// Check if user can watch ads today
   static Future<bool> canWatchAdToday() async {
     final prefs = await SharedPreferences.getInstance();
-    final today = DateTime.now().toIso8601String().split('T')[0];
+    final now = DateTime.now();
+    final today = now.toIso8601String().split('T')[0];
     final lastAdDate = prefs.getString(_lastAdDateKey);
     final dailyAdCount = prefs.getInt(_dailyAdCountKey) ?? 0;
 
-    // Reset counter if it's a new day
+    // Reset counter if it's a new day (24 hours have passed)
     if (lastAdDate != today) {
       await prefs.setString(_lastAdDateKey, today);
       await prefs.setInt(_dailyAdCountKey, 0);
+      await prefs.setString('last_reset_time', now.toIso8601String());
       return true;
     }
 
@@ -101,16 +103,52 @@ class AdMobService {
   /// Get remaining ads for today
   static Future<int> getRemainingAdsToday() async {
     final prefs = await SharedPreferences.getInstance();
-    final today = DateTime.now().toIso8601String().split('T')[0];
+    final now = DateTime.now();
+    final today = now.toIso8601String().split('T')[0];
     final lastAdDate = prefs.getString(_lastAdDateKey);
     final dailyAdCount = prefs.getInt(_dailyAdCountKey) ?? 0;
 
-    // Reset counter if it's a new day
+    // Reset counter if it's a new day (24 hours have passed)
     if (lastAdDate != today) {
+      await prefs.setString(_lastAdDateKey, today);
+      await prefs.setInt(_dailyAdCountKey, 0);
+      await prefs.setString('last_reset_time', now.toIso8601String());
       return _maxDailyAds;
     }
 
     return _maxDailyAds - dailyAdCount;
+  }
+
+  /// Check if ad is available and ready to show
+  static Future<bool> isAdAvailable() async {
+    // Check if user can watch ads today
+    final canWatch = await canWatchAdToday();
+    if (!canWatch) {
+      return false;
+    }
+
+    // Check if ad is loaded
+    return _isAdLoaded && _rewardedAd != null;
+  }
+
+  /// Get time until next ad reset
+  static Future<Duration?> getTimeUntilReset() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastResetStr = prefs.getString('last_reset_time');
+
+    if (lastResetStr == null) {
+      return null;
+    }
+
+    final lastReset = DateTime.parse(lastResetStr);
+    final nextReset = lastReset.add(const Duration(hours: 24));
+    final now = DateTime.now();
+
+    if (now.isAfter(nextReset)) {
+      return Duration.zero;
+    }
+
+    return nextReset.difference(now);
   }
 
   /// Show rewarded ad
@@ -121,13 +159,27 @@ class AdMobService {
     // Check if user can watch ads today
     final canWatch = await canWatchAdToday();
     if (!canWatch) {
-      onAdFailed('You have reached your daily ad limit (5 ads per day)');
+      final remainingAds = await getRemainingAdsToday();
+      if (remainingAds <= 0) {
+        final timeUntilReset = await getTimeUntilReset();
+        if (timeUntilReset != null && timeUntilReset > Duration.zero) {
+          final hours = timeUntilReset.inHours;
+          final minutes = timeUntilReset.inMinutes % 60;
+          onAdFailed(
+            'Daily ad limit reached. Try again in ${hours}h ${minutes}m.',
+          );
+        } else {
+          onAdFailed('Daily ad limit reached. Try again tomorrow.');
+        }
+      } else {
+        onAdFailed('Daily ad limit reached (5 ads per day).');
+      }
       return false;
     }
 
     // Check if ad is loaded
     if (!_isAdLoaded || _rewardedAd == null) {
-      onAdFailed('Ad is not ready. Please try again in a moment.');
+      onAdFailed('Ad is not ready. Please try again later.');
       return false;
     }
 
@@ -183,17 +235,24 @@ class AdMobService {
   /// Get daily ad statistics
   static Future<Map<String, dynamic>> getDailyAdStats() async {
     final prefs = await SharedPreferences.getInstance();
-    final today = DateTime.now().toIso8601String().split('T')[0];
+    final now = DateTime.now();
+    final today = now.toIso8601String().split('T')[0];
     final lastAdDate = prefs.getString(_lastAdDateKey);
     final dailyAdCount = prefs.getInt(_dailyAdCountKey) ?? 0;
+    final remainingAds = _maxDailyAds - dailyAdCount;
+    final timeUntilReset = await getTimeUntilReset();
+    final isAdReady = await isAdAvailable();
 
     return {
       'today': today,
       'lastAdDate': lastAdDate,
       'adsWatchedToday': dailyAdCount,
-      'remainingAds': _maxDailyAds - dailyAdCount,
+      'remainingAds': remainingAds,
       'maxDailyAds': _maxDailyAds,
       'tokenReward': _tokenReward,
+      'isAdReady': isAdReady,
+      'timeUntilReset': timeUntilReset?.inMinutes,
+      'canWatchAd': remainingAds > 0 && isAdReady,
     };
   }
 

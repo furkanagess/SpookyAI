@@ -14,6 +14,8 @@ class PromptCategory {
   });
 }
 
+enum PromptType { textToImage, imageToImage }
+
 class PromptItem {
   final String id;
   final String title;
@@ -22,6 +24,7 @@ class PromptItem {
   final int usageCount;
   final bool isPopular;
   final List<String> tags;
+  final PromptType promptType;
 
   const PromptItem({
     required this.id,
@@ -31,6 +34,7 @@ class PromptItem {
     this.usageCount = 0,
     this.isPopular = false,
     this.tags = const [],
+    this.promptType = PromptType.textToImage,
   });
 
   PromptItem copyWith({
@@ -41,6 +45,7 @@ class PromptItem {
     int? usageCount,
     bool? isPopular,
     List<String>? tags,
+    PromptType? promptType,
   }) {
     return PromptItem(
       id: id ?? this.id,
@@ -50,7 +55,7 @@ class PromptItem {
       usageCount: usageCount ?? this.usageCount,
       isPopular: isPopular ?? this.isPopular,
       tags: tags ?? this.tags,
+      promptType: promptType ?? this.promptType,
     );
   }
 }
-

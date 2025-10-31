@@ -941,15 +941,6 @@ class _ProfilePageState extends State<ProfilePage>
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 2),
-              Text(
-                'Build $buildNumber • $platform',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.4),
-                  fontSize: 9,
-                ),
-                textAlign: TextAlign.center,
-              ),
             ],
           ),
         );

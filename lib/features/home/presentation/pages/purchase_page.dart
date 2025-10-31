@@ -9,6 +9,7 @@ import '../../../../core/services/in_app_purchase_service.dart';
 import '../../../../core/utils/platform_utils.dart';
 import '../widgets/purchase_success_dialog.dart';
 import '../widgets/purchase_failed_dialog.dart';
+import '../../../../core/services/promo_code_service.dart';
 
 class PurchasePage extends StatefulWidget {
   const PurchasePage();
@@ -18,6 +19,8 @@ class PurchasePage extends StatefulWidget {
 }
 
 class _PurchasePageState extends State<PurchasePage> {
+  final TextEditingController _promoController = TextEditingController();
+  bool _isRedeeming = false;
   @override
   void initState() {
     super.initState();
@@ -25,6 +28,12 @@ class _PurchasePageState extends State<PurchasePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<PurchaseProvider>().initialize();
     });
+  }
+
+  @override
+  void dispose() {
+    _promoController.dispose();
+    super.dispose();
   }
 
   Future<void> _buy(Pack pack, PurchaseProvider provider) async {
@@ -143,24 +152,13 @@ class _PurchasePageState extends State<PurchasePage> {
                   icon: const Icon(Icons.restore),
                   tooltip: 'Restore Purchases',
                 ),
-              // // Debug-only: Add test tokens quickly
-              // if (kDebugMode)
-              //   IconButton(
-              //     onPressed: provider.isLoading
-              //         ? null
-              //         : () async {
-              //             final tokenProvider = context.read<TokenProvider>();
-              //             await tokenProvider.addTokens(5);
-              //             if (mounted) {
-              //               NotificationService.success(
-              //                 context,
-              //                 message: 'Added 5 test tokens',
-              //               );
-              //             }
-              //           },
-              //     icon: const Icon(Icons.add_circle_outline),
-              //     tooltip: 'Add 5 test tokens',
-              //   ),
+            // Promo code dialog button
+            IconButton(
+              onPressed: provider.isLoading ? null : _showPromoDialog,
+              icon: const Icon(Icons.card_giftcard),
+              tooltip: 'Redeem Code',
+            ),
+              // Promo code disabled in-app; use Play Store promos only
               // Token Balance
               Padding(
                 padding: const EdgeInsets.symmetric(
@@ -334,6 +332,122 @@ class _PurchasePageState extends State<PurchasePage> {
         );
       },
     );
+  }
+
+  Future<void> _showPromoDialog() async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1D162B),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text(
+            'Redeem Promo Code',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _promoController,
+                style: const TextStyle(color: Colors.white),
+                textCapitalization: TextCapitalization.characters,
+                decoration: InputDecoration(
+                  hintText: 'Enter promo code',
+                  hintStyle: const TextStyle(color: Color(0xFF8C7BA6)),
+                  filled: true,
+                  fillColor: const Color(0xFF2A1F3D),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFFF6A00)),
+                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: _isRedeeming ? null : () => Navigator.of(ctx).pop(),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Color(0xFF8C7BA6)),
+              ),
+            ),
+            FilledButton(
+              onPressed: _isRedeeming
+                  ? null
+                  : () async {
+                      await _redeemPromo(closeDialogOnSuccess: true);
+                    },
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFFF6A00),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              ),
+              child: _isRedeeming
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text('Redeem'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _redeemPromo({bool closeDialogOnSuccess = false}) async {
+    if (_isRedeeming) return;
+    final code = _promoController.text.trim();
+    if (code.isEmpty) {
+      await PurchaseFailedDialog.show(context, reason: 'Please enter a promo code.');
+      return;
+    }
+
+    setState(() => _isRedeeming = true);
+    try {
+      final result = await PromoCodeService.redeem(code);
+      if (!mounted) return;
+
+      if (result.success) {
+        final tokenProvider = context.read<TokenProvider>();
+        await tokenProvider.refreshBalance();
+        _promoController.clear();
+        if (closeDialogOnSuccess) {
+          Navigator.of(context).pop();
+        }
+        await showPurchaseSuccessDialog(
+          context,
+          tokensAdded: result.tokensGranted,
+        );
+      } else {
+        await PurchaseFailedDialog.show(context, reason: result.message);
+      }
+    } catch (e) {
+      if (mounted) {
+        await PurchaseFailedDialog.show(
+          context,
+          reason: 'Could not redeem the code. Please try again.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isRedeeming = false);
+    }
   }
 
   Widget _buildLegalLink(String text, String url) {

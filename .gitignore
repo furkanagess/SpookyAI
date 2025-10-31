@@ -57,6 +57,7 @@ api_keys.json
 lib/core/config/api_keys.dart
 lib/core/services/stability_service.dart
 lib/features/home/presentation/pages/api_key_page.dart
+lib/core/services/promo_code_service.dart
 
 # History files (contain sensitive data)
 .history/

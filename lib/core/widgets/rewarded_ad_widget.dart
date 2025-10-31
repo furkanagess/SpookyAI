@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/admob_service.dart';
 import '../services/token_provider.dart';
@@ -18,19 +18,31 @@ class _RewardedAdWidgetState extends State<RewardedAdWidget> {
   bool _isLoading = false;
   int _remainingAds = 0;
   bool _canWatchAd = false;
+  bool _isAdReady = false;
+  int? _timeUntilReset;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     _loadAdStats();
     _preloadAd();
+    _startTimer();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadAdStats() async {
     final stats = await AdMobService.getDailyAdStats();
     setState(() {
       _remainingAds = stats['remainingAds'] as int;
-      _canWatchAd = _remainingAds > 0;
+      _canWatchAd = stats['canWatchAd'] as bool;
+      _isAdReady = stats['isAdReady'] as bool;
+      _timeUntilReset = stats['timeUntilReset'] as int?;
     });
   }
 
@@ -38,8 +50,15 @@ class _RewardedAdWidgetState extends State<RewardedAdWidget> {
     await AdMobService.preloadAds();
   }
 
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      _loadAdStats();
+    });
+  }
+
   Future<void> _watchAd() async {
     if (!_canWatchAd) {
+      _showAdUnavailableMessage();
       return;
     }
 
@@ -54,7 +73,16 @@ class _RewardedAdWidgetState extends State<RewardedAdWidget> {
           final tokenProvider = context.read<TokenProvider>();
           await tokenProvider.addTokens(tokens);
 
-          // Token earned successfully
+          // Show success message
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('🎉 You earned ${tokens} tokens!'),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
 
           // Callback
           widget.onAdWatched?.call();
@@ -63,21 +91,96 @@ class _RewardedAdWidgetState extends State<RewardedAdWidget> {
           await _loadAdStats();
         },
         onAdFailed: (error) {
-          // Ad failed to show
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(error),
+                backgroundColor: Colors.orange,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
         },
       );
 
       if (!success && mounted) {
         // Ad was not completed
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Ad was not completed. Please try again.'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 2),
+          ),
+        );
       }
     } catch (e) {
       // Failed to show ad
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error loading ad. Please try again.'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  void _showAdUnavailableMessage() {
+    String message;
+    if (_remainingAds <= 0) {
+      if (_timeUntilReset != null && _timeUntilReset! > 0) {
+        final hours = _timeUntilReset! ~/ 60;
+        final minutes = _timeUntilReset! % 60;
+        message = 'Daily ad limit reached. Try again in ${hours}h ${minutes}m.';
+      } else {
+        message = 'Daily ad limit reached. Try again tomorrow.';
+      }
+    } else if (!_isAdReady) {
+      message = 'Ad is not ready. Please try again later.';
+    } else {
+      message = 'You cannot watch ads right now.';
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.orange,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  String _getStatusText() {
+    if (_remainingAds <= 0) {
+      if (_timeUntilReset != null && _timeUntilReset! > 0) {
+        final hours = _timeUntilReset! ~/ 60;
+        final minutes = _timeUntilReset! % 60;
+        return 'Daily limit reached • Resets in ${hours}h ${minutes}m';
+      } else {
+        return 'Daily limit reached • Try again tomorrow';
+      }
+    } else if (!_isAdReady) {
+      return 'Ad not ready • Try again later';
+    } else {
+      return '0.5 tokens per ad • $_remainingAds ads remaining today';
+    }
+  }
+
+  String _getButtonText() {
+    if (_remainingAds <= 0) {
+      return 'Daily Limit Reached';
+    } else if (!_isAdReady) {
+      return 'Ad Not Ready';
+    } else {
+      return 'Cannot Watch Ad';
     }
   }
 
@@ -132,7 +235,7 @@ class _RewardedAdWidgetState extends State<RewardedAdWidget> {
                       ),
                     ),
                     Text(
-                      'Earn 0.5 tokens per ad • $_remainingAds ads left today ',
+                      _getStatusText(),
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.8),
                         fontSize: 10,
@@ -185,7 +288,7 @@ class _RewardedAdWidgetState extends State<RewardedAdWidget> {
                     ? 'Loading Ad...'
                     : _canWatchAd
                     ? 'Watch Ad & Earn 0.5 Tokens'
-                    : 'Daily Limit Reached',
+                    : _getButtonText(),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: _canWatchAd && !_isLoading
